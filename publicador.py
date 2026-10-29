@@ -23,7 +23,7 @@ API = "https://gate.whapi.cloud"
 TOKEN = os.environ.get("WHAPI_TOKEN", "").strip()
 CANAL = os.environ.get("WHAPI_CANAL", "").strip()
 NOMBRE_CANAL = "negobazar"
-TOLERANCIA_MIN = 20  # si un item se atraso mas que esto, se saltea
+TOLERANCIA_MIN = 5  # si un item se atraso mas que esto, se saltea (evita rafagas de publicaciones)
 
 
 def h():
