@@ -96,3 +96,23 @@ jobs:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
         run: python publicador.py --agenda dia/agenda.json --desde 14:00 --hasta 17:30
+  tramo-4:
+    needs: tramo-3
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar de 18:00 a 22:30
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde 18:00 --hasta 22:30
