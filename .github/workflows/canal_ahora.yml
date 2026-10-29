@@ -12,7 +12,16 @@ on:
         default: "22:30"
       cada:
         description: "Minutos entre publicaciones"
-        default: "1"
+        default: "2"
+      saltear:
+        description: "Saltear los primeros N items (ya publicados)"
+        default: "0"
+      terminar:
+        description: "HH:MM en que se publica el cierre y termina (vacio = al final)"
+        default: "22:00"
+      historias_cada:
+        description: "Cada cuantas publicaciones sube tambien un estado (0 = no)"
+        default: "4"
 
 concurrency:
   group: canal-whatsapp
@@ -36,4 +45,4 @@ jobs:
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
-        run: python publicador.py --agenda dia/agenda.json --desde "${{ inputs.desde }}" --hasta "${{ inputs.hasta }}" --cada "${{ inputs.cada }}"
+        run: python publicador.py --agenda dia/agenda.json --desde "${{ inputs.desde }}" --hasta "${{ inputs.hasta }}" --cada "${{ inputs.cada }}" --saltear "${{ inputs.saltear }}" --terminar "${{ inputs.terminar }}" --historias-cada "${{ inputs.historias_cada }}"

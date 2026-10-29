@@ -64,7 +64,9 @@ def enviar(item, canal):
         url, body = "/messages/poll", {"to": canal, "title": item["texto"], "options": item["opciones"], "count": 1}
     elif tipo == "historia":
         url, body = "/stories/send/media", {"media": imagen_b64(item["archivo"]), "mime_type": "image/jpeg",
-                                             "caption": item.get("texto", ""), "width": 1080, "height": 1920}
+                                             "caption": item.get("texto", "")}
+        if os.path.basename(item["archivo"]).startswith(("h_", "inv_")):
+            body.update({"width": 1080, "height": 1920})
     else:
         return False, "tipo desconocido " + tipo
     ultimo = ""
@@ -89,6 +91,10 @@ def main():
     ap.add_argument("--hasta", required=True)
     ap.add_argument("--cada", type=float, default=0,
                     help="si se indica, ignora los horarios y publica todo lo de la franja ahora, cada N minutos")
+    ap.add_argument("--saltear", type=int, default=0, help="(modo seguido) saltear los primeros N items ya publicados")
+    ap.add_argument("--terminar", default="", help="(modo seguido) HH:MM: a esa hora publica el cierre y termina")
+    ap.add_argument("--historias-cada", type=int, default=0,
+                    help="(modo seguido) cada K publicaciones del canal, sube tambien un estado")
     args = ap.parse_args()
     if not TOKEN:
         sys.exit("Falta el secreto WHAPI_TOKEN.")
@@ -114,17 +120,46 @@ def main():
     if args.cada:
         # Modo seguido: aperturas primero, despues el resto, uno cada N minutos (las historias no cuentan para el ritmo)
         items.sort(key=lambda i: (0 if i["hora"] == "19:00" or i.get("ref") == "buenos_dias" else 1, i["hora"]))
-        fallas = 0
-        for item in items:
-            if "archivo" in item:
+        cierres = [i for i in items if str(i.get("ref", "")).startswith("cierre")]
+        resto = [i for i in items if i not in cierres][args.saltear:]
+        fin = hora_hoy(args.terminar) if args.terminar else None
+        link = agenda.get("canal", "")
+        invitaciones = sorted(f for f in os.listdir(base) if f.startswith("inv_"))
+        fallas, publicados, n_estado = 0, 0, 0
+
+        def mandar(item):
+            nonlocal fallas
+            if "archivo" in item and not item["archivo"].startswith(base):
                 item["archivo"] = os.path.join(base, item["archivo"])
             ok, info = enviar(item, canal)
             print(f"{ahora():%H:%M:%S} {item['hora']} {item['tipo']:<9} {item.get('ref', '')}: {'OK' if ok else 'ERROR ' + info}")
             fallas = 0 if ok else fallas + 1
             if fallas >= 3 or info.startswith(("401", "402", "403")):
                 sys.exit("Corto por errores repetidos (revisar la conexión del número en Whapi).")
-            if item["tipo"] != "historia":
-                time.sleep(args.cada * 60)
+
+        for item in resto:
+            if fin and ahora() >= fin - datetime.timedelta(minutes=args.cada):
+                break
+            mandar(item)
+            if item["tipo"] == "historia":
+                continue
+            publicados += 1
+            if args.historias_cada and publicados % args.historias_cada == 0 and item["tipo"] == "imagen":
+                n_estado += 1
+                if n_estado % 2 == 0 and invitaciones:
+                    txt = ("📢 *Las mejores ofertas salen primero en nuestro CANAL*\nSeguinos y activá la 🔔"
+                           + (f" 👉 {link}" if link else ""))
+                    mandar({"hora": item["hora"], "tipo": "historia", "ref": "invitacion",
+                            "archivo": os.path.join(base, invitaciones[n_estado % len(invitaciones)]), "texto": txt})
+                else:
+                    pie = f"\n📢 Más ofertas en nuestro canal 👉 {link}" if link else ""
+                    mandar({"hora": item["hora"], "tipo": "historia", "ref": "estado-" + str(item.get("ref", "")),
+                            "archivo": item["archivo"], "texto": "🌙 Oferta de la noche · Precio mayorista" + pie})
+            time.sleep(args.cada * 60)
+        if fin and ahora() < fin:
+            time.sleep(max(0, (fin - ahora()).total_seconds()))
+        for c in cierres:
+            mandar(c)
         return
     fallas = 0
     for item in items:
