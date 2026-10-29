@@ -87,6 +87,8 @@ def main():
     ap.add_argument("--agenda", default="dia/agenda.json")
     ap.add_argument("--desde", required=True)
     ap.add_argument("--hasta", required=True)
+    ap.add_argument("--cada", type=float, default=0,
+                    help="si se indica, ignora los horarios y publica todo lo de la franja ahora, cada N minutos")
     args = ap.parse_args()
     if not TOKEN:
         sys.exit("Falta el secreto WHAPI_TOKEN.")
@@ -109,6 +111,21 @@ def main():
 
     canal = CANAL or buscar_canal()
     print("Canal:", canal, "· items en franja:", len(items))
+    if args.cada:
+        # Modo seguido: aperturas primero, despues el resto, uno cada N minutos (las historias no cuentan para el ritmo)
+        items.sort(key=lambda i: (0 if i["hora"] == "19:00" or i.get("ref") == "buenos_dias" else 1, i["hora"]))
+        fallas = 0
+        for item in items:
+            if "archivo" in item:
+                item["archivo"] = os.path.join(base, item["archivo"])
+            ok, info = enviar(item, canal)
+            print(f"{ahora():%H:%M:%S} {item['hora']} {item['tipo']:<9} {item.get('ref', '')}: {'OK' if ok else 'ERROR ' + info}")
+            fallas = 0 if ok else fallas + 1
+            if fallas >= 3 or info.startswith(("401", "402", "403")):
+                sys.exit("Corto por errores repetidos (revisar la conexión del número en Whapi).")
+            if item["tipo"] != "historia":
+                time.sleep(args.cada * 60)
+        return
     fallas = 0
     for item in items:
         momento = hora_hoy(item["hora"])

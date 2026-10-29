@@ -1,0 +1,39 @@
+name: Canal de WhatsApp - publicar ahora (seguido)
+
+# Publica YA todo lo de una franja de la agenda de hoy, uno cada N minutos (sin esperar los horarios).
+on:
+  workflow_dispatch:
+    inputs:
+      desde:
+        description: "Desde (HH:MM de la agenda)"
+        default: "18:00"
+      hasta:
+        description: "Hasta (HH:MM de la agenda)"
+        default: "22:30"
+      cada:
+        description: "Minutos entre publicaciones"
+        default: "1"
+
+concurrency:
+  group: canal-whatsapp
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar seguido
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde "${{ inputs.desde }}" --hasta "${{ inputs.hasta }}" --cada "${{ inputs.cada }}"
