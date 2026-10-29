@@ -1,0 +1,98 @@
+name: Canal de WhatsApp - publicaciones del dia
+
+# Lo dispara el repo privado (distriecono-automatico) cuando termina de armar la agenda del dia.
+# Este repo es publico: los minutos de GitHub Actions son gratis, por eso aca se hace la espera.
+on:
+  repository_dispatch:
+    types: [agenda-lista]
+  workflow_dispatch: {}
+
+concurrency:
+  group: canal-whatsapp
+  cancel-in-progress: false
+
+jobs:
+  espera:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Esperar hasta las 06:50 (como maximo 5 h 40 min en este paso)
+        run: |
+          AHORA=$(TZ=America/Argentina/Buenos_Aires date +%s)
+          OBJ=$(TZ=America/Argentina/Buenos_Aires date -d "06:50" +%s)
+          S=$((OBJ-AHORA)); [ $S -gt 20400 ] && S=20400
+          if [ $S -gt 0 ]; then echo "Espero $S segundos"; sleep $S; else echo "Ya es hora"; fi
+
+  espera-2:
+    needs: espera
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Completar la espera si hiciera falta
+        run: |
+          AHORA=$(TZ=America/Argentina/Buenos_Aires date +%s)
+          OBJ=$(TZ=America/Argentina/Buenos_Aires date -d "06:50" +%s)
+          S=$((OBJ-AHORA))
+          if [ $S -gt 0 ]; then sleep $S; else echo "Ya es hora"; fi
+
+  tramo-1:
+    needs: espera-2
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar de 06:55 a 10:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde 06:55 --hasta 10:59
+
+  tramo-2:
+    needs: tramo-1
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar de 11:00 a 13:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde 11:00 --hasta 13:59
+
+  tramo-3:
+    needs: tramo-2
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar de 14:00 a 17:30
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde 14:00 --hasta 17:30
