@@ -102,6 +102,7 @@ def main():
     desde, hasta = hora_hoy(args.desde), hora_hoy(args.hasta)
     items = [i for i in agenda["items"] if desde <= hora_hoy(i["hora"]) <= hasta]
     items.sort(key=lambda i: i["hora"])
+    # Los mensajes de apertura (07:00 y 19:00) salen siempre primero, aunque el bloque arranque tarde
     if not items or ahora() > hasta + datetime.timedelta(minutes=TOLERANCIA_MIN):
         print("Nada para publicar en esta franja.")
         return
@@ -111,7 +112,8 @@ def main():
     fallas = 0
     for item in items:
         momento = hora_hoy(item["hora"])
-        if ahora() > momento + datetime.timedelta(minutes=TOLERANCIA_MIN):
+        es_apertura = item.get("ref") == "buenos_dias" or item["hora"] == "19:00"
+        if ahora() > momento + datetime.timedelta(minutes=TOLERANCIA_MIN) and not es_apertura:
             print(f"{item['hora']} {item['tipo']}: salteado (atrasado)")
             continue
         espera = (momento - ahora()).total_seconds()
