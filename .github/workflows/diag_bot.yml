@@ -1,0 +1,13 @@
+name: Diag bot
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  d:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s https://bot-negobazar.negobazar.deno.net/diag > d.json
+          python3 -c "import json;d=json.load(open('d.json'));print(json.dumps({k:d.get(k) for k in ['version','combos','whapi','prueba_envio']},ensure_ascii=False)[:3000])" > r.txt || head -c 500 d.json > r.txt
+          git init -q; git config user.name bot; git config user.email bot@x
+          git add r.txt; git commit -qm r; git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
