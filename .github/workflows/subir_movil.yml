@@ -1,0 +1,20 @@
+name: HeyGen - subir foto por link movil
+on:
+  workflow_dispatch:
+    inputs:
+      url: {required: true}
+permissions:
+  contents: write
+jobs:
+  subir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install playwright && python -m playwright install --with-deps chromium
+      - run: curl -sL -o foto.jpg https://raw.githubusercontent.com/negobazar/negobazar-canal/look-tmp/look_pedidos_armados.jpg
+      - run: python tools/subir_movil.py "${{ inputs.url }}" foto.jpg
+      - if: always()
+        run: |
+          cd out && git init -q -b movil-res && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm res && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" movil-res
