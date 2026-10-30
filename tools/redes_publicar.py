@@ -6,7 +6,8 @@ Uso: python tools/redes_publicar.py [manana|mediodia|tarde|noche]   (sin argumen
 """
 import datetime, json, os, subprocess, sys, zoneinfo, requests
 
-RAW = "https://raw.githubusercontent.com/negobazar/negobazar-canal/" + os.environ.get("REDES_RAMA", "dia") + "/"
+BASE = "https://raw.githubusercontent.com/negobazar/negobazar-canal/"
+RAW = BASE + os.environ.get("REDES_RAMA", "dia") + "/"
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
 
@@ -24,11 +25,19 @@ def meta(*args):
 
 def main():
     momento = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else momento_actual()
-    plan = requests.get(RAW + "redes.json", timeout=30)
-    if plan.status_code != 200:
-        sys.exit("Todavia no hay redes.json en la rama dia")
-    plan = plan.json()
+    global RAW
     hoy = datetime.datetime.now(TZ).date().isoformat()
+    plan = None
+    for rama in [RAW, BASE + "redes-hoy/"]:  # si la rama del dia no tiene redes de hoy, usa la armada a mano
+        r = requests.get(rama + "redes.json", timeout=30)
+        if r.status_code == 200 and r.json().get("fecha") == hoy:
+            plan, RAW = r.json(), rama
+            break
+    if plan is None:
+        r = requests.get(RAW + "redes.json", timeout=30)
+        if r.status_code != 200:
+            sys.exit("Todavia no hay redes.json")
+        plan = r.json()
     if plan.get("fecha") != hoy and not (momento == "noche" and datetime.datetime.now(TZ).hour < 4):
         print(f"El plan es de {plan.get('fecha')}, hoy es {hoy}: no publico contenido viejo.")
         return
