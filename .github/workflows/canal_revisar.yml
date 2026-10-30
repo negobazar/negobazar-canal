@@ -1,0 +1,28 @@
+name: Canal - revisar ultimas publicaciones
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: |
+          python3 - <<'PY' > r.txt 2>&1 || true
+          import os, datetime, requests, publicador as p
+          c = p.CANAL or p.buscar_canal()
+          r = requests.get(p.API + f"/newsletters/{c}/messages", headers=p.h(), params={"count": 100}, timeout=60)
+          print("HTTP", r.status_code, "health", requests.get(p.API + "/health", headers=p.h(), timeout=30).json().get("status"))
+          ms = r.json().get("messages", []) if r.ok else []
+          if not r.ok: print(r.text[:300])
+          for m in sorted(ms, key=lambda m: m.get("timestamp", 0)):
+              t = datetime.datetime.fromtimestamp(m.get("timestamp", 0), datetime.timezone(datetime.timedelta(hours=-3)))
+              cap = ((m.get("image") or {}).get("caption") or (m.get("text") or {}).get("body") or "").replace("\n", " ")
+              print(t.strftime("%m-%d %H:%M"), m.get("type"), cap[:70])
+          PY
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
