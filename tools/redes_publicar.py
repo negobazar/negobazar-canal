@@ -6,7 +6,7 @@ Uso: python tools/redes_publicar.py [manana|mediodia|tarde|noche]   (sin argumen
 """
 import datetime, json, os, subprocess, sys, zoneinfo, requests
 
-RAW = "https://raw.githubusercontent.com/negobazar/negobazar-canal/dia/"
+RAW = "https://raw.githubusercontent.com/negobazar/negobazar-canal/" + os.environ.get("REDES_RAMA", "dia") + "/"
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
 
