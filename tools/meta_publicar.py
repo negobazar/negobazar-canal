@@ -94,9 +94,9 @@ def main():
     if a.solo != "fb" and IG:
         if a.tipo == "imagen": hechos["ig"] = ig_imagen(a.url, a.texto)
         elif a.tipo == "reel": hechos["ig"] = ig_reel(a.url, a.texto)
-        print("IG listo:", hechos, flush=True)
         elif a.tipo == "historia": hechos["ig"] = ig_historia(a.url)
         elif a.tipo == "carrusel": hechos["ig"] = ig_carrusel(a.url.split(","), a.texto)
+        print("IG listo:", hechos, flush=True)
     if a.solo != "ig" and PAGE and a.tipo in ("imagen", "reel"):
         hechos["fb"] = fb_imagen(a.url, a.texto) if a.tipo == "imagen" else fb_video(a.url, a.texto)
     print(json.dumps(hechos))
