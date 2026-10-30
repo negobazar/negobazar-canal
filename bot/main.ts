@@ -269,6 +269,13 @@ async function webhook(req: Request): Promise<Response> {
   return new Response("ok");
 }
 
+// Prueba unica de envio despues de pasar Whapi al plan pago.
+if (!(await kv.get(["prueba_envio", "2026-10-30-pago"])).value && env("AVISO_CHAT")) {
+  await kv.set(["prueba_envio", "2026-10-30-pago"], { t: new Date().toISOString(), r: "enviando" });
+  const r = await enviar(env("AVISO_CHAT"), "✅ Bot de Negobazar activo: Whapi en plan pago, ya puede responder a todos los clientes.").catch((e) => String(e));
+  await kv.set(["prueba_envio", "2026-10-30-pago"], { t: new Date().toISOString(), r: JSON.stringify(r).slice(0, 300) });
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   if (req.method === "POST" && url.pathname === "/webhook") return webhook(req);
@@ -285,6 +292,7 @@ Deno.serve(async (req) => {
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
       gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30d", ultimo_error: e,
+      prueba_envio: (await kv.get(["prueba_envio", "2026-10-30-pago"])).value,
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
       whapi: await (async () => { try {
         const h = await fetch(`${WHAPI}/health?wakeup=false`, { headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}` } });
