@@ -11,6 +11,7 @@
 //   PAUSA_HORAS      horas que el bot se calla en un chat cuando contesta una persona (por defecto 12)
 
 import { CONOCIMIENTO } from "./conocimiento.ts";
+import { remitoPDF, calcular, type DatosRemito } from "./remito.ts";
 
 const env = (k: string, d = "") => Deno.env.get(k) ?? d;
 const WHAPI = "https://gate.whapi.cloud";
@@ -74,7 +75,13 @@ Reglas:
 - Nunca inventes productos, precios, descuentos ni promociones. Los precios son SIN IVA y se confirman al tomar el pedido.
 - Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link, y aclarale una vez que los precios son *sin IVA*. Si está sin stock, decilo y ofrecé alternativas.
 - Recordá el mínimo de compra ($750.000, combinando rubros) cuando sea útil, sin repetirlo en cada mensaje.
-- Si el cliente quiere cerrar el pedido, pagar, coordinar un envío puntual, tiene un reclamo, pide hablar con una persona o está enojado: respondé amable que ya le avisás al equipo y agregá [DERIVAR] al final.
+- CIERRE DE PEDIDO: cuando el cliente quiere hacer o cerrar el pedido:
+  1) Confirmá la lista final de productos (código y cantidad), respetando el mínimo y el múltiplo de cada producto.
+  2) Pedí los datos que falten, de a uno o dos por mensaje: nombre y apellido o razón social; CUIT o DNI; dirección de entrega con localidad; mail (opcional); forma de pago según su zona. El teléfono ya lo tenemos.
+  3) El presupuesto va SIN IVA. Solo si el cliente pide factura o pregunta por el IVA, avisale que se le suma el 21% de IVA y marcá "iva": true.
+  4) Cuando tengas todo y el cliente confirme, respondé con un mensaje corto diciendo que le mandás el presupuesto (productos sujetos a stock) y que el equipo lo contacta para confirmar, y agregá AL FINAL, sin mostrarlo de otra forma:
+  [PEDIDO]{"items":[{"c":"código","q":cantidad}],"nombre":"","documento":"","direccion":"","localidad":"","zona":"CABA|GBA|INTERIOR","email":"","negocio":"","pago":"","iva":false}[/PEDIDO]
+- Si el cliente quiere pagar algo ya presupuestado, coordinar un envío puntual, tiene un reclamo, pide hablar con una persona o está enojado: respondé amable que ya le avisás al equipo y agregá [DERIVAR] al final.
 - STOCK: si preguntan por stock, informá la cantidad disponible que figura en el producto. Si no queda claro de qué producto habla, preguntale el nombre o el código antes de responder. No derives por una consulta de stock.
 - Si la cantidad que quiere (o el stock disponible) no alcanza para llegar al mínimo de $750.000, ofrecé primero combinar con otros productos; si igual quiere comprar menos, explicale la opción de compra menor con recargo y el costo de envío (ver "COMPRAS MENORES A $750.000").
 - Si alguien quiere comprar MENOS de $750.000: decile que se puede, pero con un recargo del 20% sobre el precio mayorista, y explicale el motivo (no romper la cadena de venta de nuestros revendedores). Si cotizás productos para esa compra, mostrá el precio ya con el 20% (precio x 1,20, redondeado) y aclará que el pago es solo con transferencia anticipada del total (el pedido se arma recién cuando se acredita) y que el envío NO es gratis (CABA $10.000; GBA $15.000; resto de la provincia de Buenos Aires y del país por Vía Cargo, flete a cargo del comprador + $10.000 por llevarlo de nuestro depósito a Vía Cargo). Antes, contale que si llega a $750.000 combinando rubros accede al precio mayorista normal.
@@ -135,6 +142,52 @@ async function enviar(to: string, body: string) {
   return j;
 }
 
+const pendientes = new Map<string, Record<string, unknown>>();
+
+async function bajarFoto(url: string): Promise<Uint8Array | undefined> {
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "Mozilla/5.0" } });
+    if (r.ok && (r.headers.get("content-type") ?? "").includes("jpeg")) return new Uint8Array(await r.arrayBuffer());
+  } catch (_) { /* sin foto */ }
+  return undefined;
+}
+
+async function enviarPresupuesto(chat: string, nombreWa: string, ped: Record<string, unknown>) {
+  const cat = await productos();
+  const items = [];
+  for (const it of (ped.items as { c: string; q: number }[] ?? [])) {
+    const p = cat.find((x) => x.c === String(it.c).trim());
+    if (!p || !(Number(it.q) > 0)) continue;
+    items.push({ codigo: p.c, nombre: p.n, cantidad: Math.round(Number(it.q)), precio: p.p, foto: p.img ? await bajarFoto(p.img) : undefined });
+  }
+  if (!items.length) return;
+  const n = ((await kv.get<number>(["contador_presupuesto"])).value ?? 0) + 1;
+  await kv.set(["contador_presupuesto"], n);
+  const hoy = new Date();
+  const numero = `${hoy.toISOString().slice(2, 10).replaceAll("-", "")}-${String(n).padStart(4, "0")}`;
+  const zona = String(ped.zona ?? "").toUpperCase();
+  const d: DatosRemito = {
+    numero, fecha: hoy, zona: (["CABA", "GBA", "INTERIOR"].includes(zona) ? zona : "") as DatosRemito["zona"],
+    pago: String(ped.pago ?? ""), conIva: ped.iva === true, items,
+    cliente: { nombre: String(ped.nombre || nombreWa || ""), documento: String(ped.documento ?? ""), direccion: String(ped.direccion ?? ""),
+      localidad: String(ped.localidad ?? ""), email: String(ped.email ?? ""), negocio: String(ped.negocio ?? ""), telefono: "+" + chat.split("@")[0] },
+  };
+  const pdf = remitoPDF(d);
+  const c = calcular(d);
+  let b64 = ""; const CH = 0x8000;
+  for (let i = 0; i < pdf.length; i += CH) b64 += String.fromCharCode(...pdf.subarray(i, i + CH));
+  const media = "data:application/pdf;base64," + btoa(b64);
+  const archivo = `Presupuesto-Negobazar-${numero}.pdf`;
+  const mandarDoc = (to: string, caption: string) => fetch(`${WHAPI}/messages/document`, {
+    method: "POST", headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ to, media, filename: archivo, caption }),
+  }).then((r) => r.json()).then(async (j) => { if (j?.message?.id) await kv.set(["enviado", j.message.id], 1, { expireIn: 86400000 }); return j; })
+    .catch((e) => console.log("error doc", String(e)));
+  await mandarDoc(chat, `📄 Presupuesto N° ${numero} — productos sujetos a stock.\nEn breve te contacta alguien del equipo para confirmar. ¡Gracias!`);
+  const aviso = env("AVISO_CHAT");
+  if (aviso) await mandarDoc(aviso, `🔔 *Pedido para confirmar* · ${d.cliente.nombre} · wa.me/${chat.split("@")[0]}\nTotal ${"$" + c.total.toLocaleString("es-AR")}${c.menor ? " (compra menor)" : ""}`);
+}
+
 async function responder(chat: string, texto: string, nombre: string): Promise<string> {
   const clave = ["hist", chat];
   const prev = ((await kv.get<{ role: string; text: string }[]>(clave)).value ?? []).slice(-10);
@@ -146,13 +199,20 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
     // No pausa el chat ni guarda historial: el proximo mensaje se vuelve a intentar.
     return "¡Hola! Gracias por escribir a Negobazar 🙌 En un momento te respondemos.";
   }
-  const derivar = resp.includes("[DERIVAR]");
+  let pedido: Record<string, unknown> | null = null;
+  const mp = resp.match(/\[PEDIDO\]([\s\S]*?)\[\/PEDIDO\]/);
+  if (mp) {
+    try { pedido = JSON.parse(mp[1].trim().replace(/^```json|```$/g, "")); } catch (_) { pedido = null; }
+    resp = resp.replace(mp[0], "").trim();
+  }
+  const derivar = resp.includes("[DERIVAR]") || !!pedido;
   resp = resp.replaceAll("[DERIVAR]", "").trim();
+  if (pedido) pendientes.set(chat, pedido);
   await kv.set(clave, [...hist, { role: "bot", text: resp }].slice(-12), { expireIn: 7 * 86400000 });
   if (derivar) {
     await kv.set(["pausa", chat], 1, { expireIn: Number(env("PAUSA_HORAS", "12")) * 3600000 });
     const aviso = env("AVISO_CHAT");
-    if (aviso) {
+    if (aviso && !pedido) {
       await enviar(aviso, `🔔 *Cliente para atender*\n${nombre || ""} wa.me/${chat.split("@")[0]}\nÚltimo mensaje: "${texto.slice(0, 300)}"`);
     }
   }
@@ -182,6 +242,8 @@ async function webhook(req: Request): Promise<Response> {
     }
     const resp = await responder(chat, texto, m.from_name ?? "");
     await enviar(chat, resp);
+    const ped = pendientes.get(chat);
+    if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); }
   }
   return new Response("ok");
 }

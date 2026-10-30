@@ -1,0 +1,25 @@
+name: Bot - probar presupuesto PDF
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [prueba-presupuesto]
+
+permissions:
+  contents: write
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check bot/main.ts
+      - run: mkdir -p out && deno run -A bot/pruebas/presupuesto.ts
+      - if: always()
+        run: |
+          cd out && git init -q -b presupuesto-pdf && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm pdf && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" presupuesto-pdf
