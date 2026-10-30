@@ -1,0 +1,40 @@
+name: Bot WhatsApp - medir modelos Gemini
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Medir
+        env:
+          K: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          mkdir -p out
+          curl -s -m 30 "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=$K" | python3 -c "
+          import json,sys
+          for m in json.load(sys.stdin).get('models',[]):
+              if 'generateContent' in m.get('supportedGenerationMethods',[]) and 'gemini' in m['name']: print(m['name'].split('/')[1])
+          " > out/modelos.txt
+          cat out/modelos.txt
+          for m in $(grep -E 'flash|lite' out/modelos.txt | head -8); do
+            for cfg in '{}' '{"thinkingConfig":{"thinkingLevel":"low"}}' '{"thinkingConfig":{"thinkingBudget":0}}'; do
+              body="{\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"Respondé en una línea: ¿qué es un bazar?\"}]}],\"generationConfig\":$cfg}"
+              t0=$(date +%s.%N)
+              r=$(curl -s -m 60 -H 'Content-Type: application/json' -d "$body" "https://generativelanguage.googleapis.com/v1beta/models/$m:generateContent?key=$K")
+              t1=$(date +%s.%N)
+              echo "$m $cfg $(python3 -c "print(round($t1-$t0,1))")s :: $(echo "$r" | python3 -c "import json,sys
+          try:
+            j=json.load(sys.stdin); print(j['candidates'][0]['content']['parts'][-1].get('text','')[:80].replace(chr(10),' ') if 'candidates' in j else str(j.get('error',{}).get('code'))+' '+str(j.get('error',{}).get('message',''))[:90])
+          except Exception as e: print('ERR',e)")" | tee -a out/medicion.txt
+            done
+          done
+      - if: always()
+        run: |
+          cd out && git init -q -b bot-modelos && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm medir && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" bot-modelos
