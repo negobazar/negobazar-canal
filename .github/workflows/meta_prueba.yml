@@ -29,6 +29,6 @@ jobs:
           python tools/meta_publicar.py "${{ inputs.tipo }}" "${{ inputs.url }}" "${{ inputs.texto }}" ${{ inputs.solo && format('--solo {0}', inputs.solo) || '' }} 2>&1 | tee resultado.txt
       - if: always()
         run: |
-          mkdir -p o && cp resultado.txt o/ 2>/dev/null || echo "sin resultado" > o/resultado.txt
+          mkdir -p o && cp -r out/. o/ 2>/dev/null; cp resultado.txt o/ 2>/dev/null || echo "sin resultado" > o/resultado.txt
           cd o && git init -q -b meta-res && git config user.name bot && git config user.email bot@negobazar
           git add -A && git commit -qm res && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" meta-res

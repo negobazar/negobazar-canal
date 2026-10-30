@@ -19,11 +19,21 @@ PAGE = os.environ.get("FB_PAGE_ID", "").strip()
 IG = os.environ.get("IG_USER_ID", "").strip()
 
 
-def api(metodo, ruta, **datos):
-    datos["access_token"] = T
+_PT = {}
+
+
+def token_pagina():
+    if "t" not in _PT:
+        _PT["t"] = api("GET", PAGE, fields="access_token", _tok=T)["access_token"]
+    return _PT["t"]
+
+
+def api(metodo, ruta, _tok=None, **datos):
+    datos["access_token"] = _tok or T
     r = requests.request(metodo, f"{G}/{ruta}", data=datos if metodo == "POST" else None,
                          params=datos if metodo == "GET" else None, timeout=120)
     j = r.json()
+    j.pop("paging", None)
     if "error" in j:
         raise SystemExit(f"Error Meta en {ruta}: {json.dumps(j['error'], ensure_ascii=False)}")
     return j
@@ -67,16 +77,16 @@ def ig_carrusel(urls, texto):
 
 
 def fb_imagen(url, texto):
-    return api("POST", f"{PAGE}/photos", url=url, message=texto)["id"]
+    return api("POST", f"{PAGE}/photos", _tok=token_pagina(), url=url, message=texto)["id"]
 
 
 def fb_video(url, texto):
-    return api("POST", f"{PAGE}/videos", file_url=url, description=texto)["id"]
+    return api("POST", f"{PAGE}/videos", _tok=token_pagina(), file_url=url, description=texto)["id"]
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas", "ultimos"])
+    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas", "ultimos", "portadas"])
     ap.add_argument("url", nargs="?")
     ap.add_argument("texto", nargs="?", default="")
     ap.add_argument("--solo", choices=["ig", "fb"])
@@ -86,9 +96,17 @@ def main():
     if a.tipo == "cuentas":
         print(json.dumps(api("GET", PAGE or "me", fields="id,name,instagram_business_account{id,username}"), ensure_ascii=False))
         return
+    if a.tipo == "portadas":
+        os.makedirs("out", exist_ok=True)
+        for i, m in enumerate(api("GET", f"{IG}/media", fields="media_type,media_url,thumbnail_url,caption,permalink", limit=int(a.url or 12))["data"]):
+            u = m.get("thumbnail_url") or m.get("media_url")
+            if u:
+                open(f"out/{i:02d}.jpg", "wb").write(requests.get(u, timeout=60).content)
+            print(i, m["media_type"], m["permalink"], (m.get("caption") or "")[:120].replace("\n", " "))
+        return
     if a.tipo == "ultimos":
         print(json.dumps(api("GET", f"{IG}/media", fields="id,media_type,permalink,timestamp", limit=3), ensure_ascii=False))
-        print(json.dumps(api("GET", f"{PAGE}/posts", fields="id,created_time,permalink_url", limit=3), ensure_ascii=False))
+        print(json.dumps(api("GET", f"{PAGE}/posts", _tok=token_pagina(), fields="id,created_time,permalink_url", limit=3), ensure_ascii=False))
         return
     hechos = {}
     if a.solo != "fb" and IG:
