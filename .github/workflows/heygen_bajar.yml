@@ -1,0 +1,29 @@
+name: HeyGen - bajar video
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_id:
+        description: "ID del video (vacio = el ultimo terminado)"
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  bajar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+        run: python heygen_bajar.py "${{ inputs.video_id }}"
+      - if: always()
+        run: |
+          cd out
+          git init -q -b heygen-videos
+          git config user.name bot; git config user.email bot@negobazar
+          git add -A; git commit -qm "video bajado $(date -u +%FT%TZ)" || exit 0
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" heygen-videos
