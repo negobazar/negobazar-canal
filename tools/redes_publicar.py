@@ -12,7 +12,7 @@ TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 
 def momento_actual():
     h = datetime.datetime.now(TZ).hour
-    return "manana" if h < 12 else "mediodia" if h < 16 else "tarde" if h < 19 else "noche"
+    return "manana" if h < 12 else "mediodia" if h < 16 else "tarde" if h < 18 else "reel" if h < 20 else "noche"
 
 
 def meta(*args):
@@ -40,6 +40,9 @@ def main():
         if p["tipo"] == "carrusel":
             ok &= meta("carrusel", ",".join(urls), p["texto"])
             ok &= meta("imagen", urls[0], p["texto"], "--solo", "fb")
+        elif p["tipo"] == "reel":
+            extra = ["--portada", RAW + p["portada"]] if p.get("portada") else []
+            ok &= meta("reel", urls[0], p["texto"], *extra)
         else:
             ok &= meta("imagen", urls[0], p["texto"])
     for h in plan.get("historias", []):
