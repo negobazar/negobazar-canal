@@ -102,20 +102,27 @@ async function gemini(historial: { role: string; text: string }[], contexto: str
   const modelo = await elegirModelo();
   const contents = historial.map((h) => ({ role: h.role === "bot" ? "model" : "user", parts: [{ text: h.text }] }));
   contents[contents.length - 1].parts[0].text += `\n\n[Productos del catálogo relacionados con este mensaje — usalos solo si sirven]\n${contexto}`;
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${env("GEMINI_API_KEY")}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SISTEMA }] },
-      contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
-    }),
-    signal: AbortSignal.timeout(60000),
-  }).catch((e) => new Response(JSON.stringify({ error: String(e) })));
-  const j = await r.json();
-  const txt = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
+  const llamar = (thinking: Record<string, unknown> | null) =>
+    fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${env("GEMINI_API_KEY")}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: SISTEMA }] },
+        contents,
+        generationConfig: { temperature: 0.4, maxOutputTokens: 4096, ...(thinking ? { thinkingConfig: thinking } : {}) },
+      }),
+      signal: AbortSignal.timeout(45000),
+    }).then((r) => r.json()).catch((e) => ({ error: String(e) }));
+  // Razonamiento bajo para que conteste rapido; si el modelo no acepta la opcion, se reintenta sin ella.
+  let j = await llamar({ thinkingLevel: "low" });
+  if (j?.error?.code === 400) j = await llamar({ thinkingBudget: 0 });
+  if (j?.error?.code === 400) j = await llamar(null);
+  const txt = j?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought)
+    .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
   if (!txt) console.log("gemini sin respuesta", JSON.stringify(j).slice(0, 500));
-  return txt.trim() || "¡Gracias por escribir a Negobazar! En un ratito te responde alguien del equipo 🙌 [DERIVAR]";
+  // WhatsApp usa *un* asterisco para negrita
+  return txt.replace(/\*\*(.+?)\*\*/g, "*$1*").trim() ||
+    "¡Gracias por escribir a Negobazar! En un ratito te responde alguien del equipo 🙌 [DERIVAR]";
 }
 
 async function enviar(to: string, body: string) {
