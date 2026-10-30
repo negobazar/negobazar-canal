@@ -24,6 +24,10 @@ COMPRAS MENORES A $750.000 (excepción)
 - Se pueden hacer, pero los precios tienen un recargo del 20% sobre el precio mayorista publicado.
 - Motivo (explicarlo con buena onda): el precio mayorista existe para quienes compran volumen y revenden; si vendiéramos al mismo precio en cantidades chicas, rompemos la cadena de venta y perjudicamos a nuestros propios clientes revendedores.
 - En este caso el pago es ÚNICAMENTE con transferencia previa del total (no efectivo, no seña).
+- El envío NO es gratis en compras menores:
+  · CABA: $10.000.
+  · GBA: $15.000.
+  · Resto de la provincia de Buenos Aires y del país: por Vía Cargo, el flete lo paga el comprador, más $10.000 por llevar el pedido desde nuestro depósito hasta Vía Cargo.
 
 ESCALA DE DESCUENTOS POR VOLUMEN (para clientes con potencial)
 - Compras mayores a $10.000.000: 5% de descuento.
