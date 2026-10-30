@@ -1,0 +1,48 @@
+name: Bot WhatsApp - probar respuestas
+
+# Levanta el bot localmente (sin WhatsApp) y le hace preguntas de prueba. Deja las respuestas en la rama bot-pruebas.
+on:
+  workflow_dispatch:
+    inputs:
+      preguntas:
+        description: "Preguntas separadas por |"
+        default: "Hola, qué venden?|Tienen sartenes Hudson?|Cuál es la compra mínima?|Hacen envíos a Córdoba?|Quiero comprar 2 tazas nada más|Ok quiero cerrar el pedido"
+
+permissions:
+  contents: write
+
+jobs:
+  probar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check --unstable-kv bot/main.ts
+      - name: Probar
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLAVE_ADMIN: prueba123
+          PREGUNTAS: ${{ inputs.preguntas }}
+        run: |
+          deno run -A --unstable-kv bot/main.ts > server.log 2>&1 &
+          sleep 6
+          mkdir -p out
+          curl -s localhost:8000/ > out/estado.txt
+          IFS='|' read -ra QS <<< "$PREGUNTAS"
+          for q in "${QS[@]}"; do
+            r=$(curl -s -G localhost:8000/probar --data-urlencode "clave=prueba123" --data-urlencode "chat=1" --data-urlencode "q=$q")
+            printf '👤 %s\n🤖 %s\n\n' "$q" "$r" >> out/respuestas.txt
+          done
+          cp server.log out/ || true
+          cat out/respuestas.txt
+      - name: Guardar
+        if: always()
+        run: |
+          cd out
+          git init -q -b bot-pruebas
+          git config user.name bot; git config user.email bot@negobazar
+          git add -A; git commit -qm "prueba bot" || exit 0
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" bot-pruebas
