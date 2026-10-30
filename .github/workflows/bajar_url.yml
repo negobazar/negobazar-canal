@@ -1,0 +1,16 @@
+name: Bajar video por URL
+on:
+  workflow_dispatch:
+    inputs:
+      url: {required: true}
+permissions:
+  contents: write
+jobs:
+  bajar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - run: |
+          mkdir out && curl -sSL -o out/video.mp4 "${{ inputs.url }}" && ls -la out
+          cd out && git init -q -b heygen-videos && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm video && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" heygen-videos
