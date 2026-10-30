@@ -25,6 +25,11 @@ COMPRAS MENORES A $750.000 (excepción)
 - Motivo (explicarlo con buena onda): el precio mayorista existe para quienes compran volumen y revenden; si vendiéramos al mismo precio en cantidades chicas, rompemos la cadena de venta y perjudicamos a nuestros propios clientes revendedores.
 - En este caso el pago es ÚNICAMENTE con transferencia previa del total (no efectivo, no seña).
 
+ESCALA DE DESCUENTOS POR VOLUMEN (para clientes con potencial)
+- Compras mayores a $10.000.000: 5% de descuento.
+- Compras mayores a $20.000.000: 5% + 3% adicional.
+- Se ofrece solo a potenciales clientes de volumen, después de entender su negocio. El descuento final lo confirma el equipo al tomar el pedido.
+
 CLIENTES GRANDES DEL INTERIOR
 - Si un cliente de provincia muestra que es un comprador grande (varios locales, distribuidora, pedidos de varios millones, compra frecuente, mucho volumen), se lo puede invitar a venir a conocer el depósito en su primera compra. La visita se coordina con el equipo.
 - Si no es un cliente grande, hace el pedido normalmente y lo abona con transferencia previa del total.
