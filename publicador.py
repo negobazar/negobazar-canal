@@ -111,7 +111,7 @@ def main():
     items = [i for i in agenda["items"] if desde <= hora_hoy(i["hora"]) <= hasta]
     items.sort(key=lambda i: i["hora"])
     # Los mensajes de apertura (07:00 y 19:00) salen siempre primero, aunque el bloque arranque tarde
-    if not items or ahora() > hasta + datetime.timedelta(minutes=TOLERANCIA_MIN):
+    if not items or (not args.cada and ahora() > hasta + datetime.timedelta(minutes=TOLERANCIA_MIN)):
         print("Nada para publicar en esta franja.")
         return
 
