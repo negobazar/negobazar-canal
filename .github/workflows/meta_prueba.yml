@@ -7,6 +7,7 @@ on:
       url: {description: "URL publica del archivo", default: ""}
       texto: {description: "Texto del posteo", default: ""}
       solo: {description: "vacio = IG y FB | ig | fb", default: ""}
+      portada: {description: "URL publica de la portada (reels)", default: ""}
 
 permissions:
   contents: write
@@ -26,7 +27,7 @@ jobs:
           META_TOKEN: ${{ secrets.META_TOKEN }}
         run: |
           set -o pipefail
-          python tools/meta_publicar.py "${{ inputs.tipo }}" "${{ inputs.url }}" "${{ inputs.texto }}" ${{ inputs.solo && format('--solo {0}', inputs.solo) || '' }} 2>&1 | tee resultado.txt
+          python tools/meta_publicar.py "${{ inputs.tipo }}" "${{ inputs.url }}" "${{ inputs.texto }}" ${{ inputs.solo && format('--solo {0}', inputs.solo) || '' }} --portada "${{ inputs.portada }}" 2>&1 | tee resultado.txt
       - if: always()
         run: |
           mkdir -p o && cp -r out/. o/ 2>/dev/null; cp resultado.txt o/ 2>/dev/null || echo "sin resultado" > o/resultado.txt

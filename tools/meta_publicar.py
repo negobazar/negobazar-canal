@@ -31,7 +31,7 @@ def token_pagina():
 def api(metodo, ruta, _tok=None, **datos):
     datos["access_token"] = _tok or T
     r = requests.request(metodo, f"{G}/{ruta}", data=datos if metodo == "POST" else None,
-                         params=datos if metodo == "GET" else None, timeout=120)
+                         params=datos if metodo in ("GET", "DELETE") else None, timeout=120)
     j = r.json()
     j.pop("paging", None)
     if "error" in j:
@@ -60,8 +60,9 @@ def ig_imagen(url, texto):
     return ig_publicar(api("POST", f"{IG}/media", image_url=url, caption=texto)["id"])
 
 
-def ig_reel(url, texto):
-    return ig_publicar(api("POST", f"{IG}/media", media_type="REELS", video_url=url, caption=texto, share_to_feed="true")["id"])
+def ig_reel(url, texto, portada=""):
+    extra = {"cover_url": portada} if portada else {}
+    return ig_publicar(api("POST", f"{IG}/media", media_type="REELS", video_url=url, caption=texto, share_to_feed="true", **extra)["id"])
 
 
 def ig_historia(url):
@@ -86,15 +87,19 @@ def fb_video(url, texto):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas", "ultimos", "portadas"])
+    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas", "ultimos", "portadas", "borrar"])
     ap.add_argument("url", nargs="?")
     ap.add_argument("texto", nargs="?", default="")
     ap.add_argument("--solo", choices=["ig", "fb"])
+    ap.add_argument("--portada", default="")
     a = ap.parse_args()
     if not T:
         sys.exit("Falta META_TOKEN")
     if a.tipo == "cuentas":
         print(json.dumps(api("GET", PAGE or "me", fields="id,name,instagram_business_account{id,username}"), ensure_ascii=False))
+        return
+    if a.tipo == "borrar":
+        print(json.dumps(api("DELETE", a.url)))
         return
     if a.tipo == "portadas":
         os.makedirs("out", exist_ok=True)
@@ -111,7 +116,7 @@ def main():
     hechos = {}
     if a.solo != "fb" and IG:
         if a.tipo == "imagen": hechos["ig"] = ig_imagen(a.url, a.texto)
-        elif a.tipo == "reel": hechos["ig"] = ig_reel(a.url, a.texto)
+        elif a.tipo == "reel": hechos["ig"] = ig_reel(a.url, a.texto, a.portada)
         elif a.tipo == "historia": hechos["ig"] = ig_historia(a.url)
         elif a.tipo == "carrusel": hechos["ig"] = ig_carrusel(a.url.split(","), a.texto)
         print("IG listo:", hechos, flush=True)
