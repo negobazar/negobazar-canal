@@ -78,8 +78,28 @@ Reglas:
 INFORMACIÓN DE NEGOBAZAR:
 ${CONOCIMIENTO}`;
 
+let modeloElegido = "";
+async function elegirModelo(): Promise<string> {
+  if (env("GEMINI_MODEL")) return env("GEMINI_MODEL");
+  if (modeloElegido) return modeloElegido;
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env("GEMINI_API_KEY")}`);
+    const j = await r.json();
+    const ok = (j.models ?? []).filter((m: { name: string; supportedGenerationMethods?: string[] }) =>
+      /gemini-[\d.]+-flash$/.test(m.name) && (m.supportedGenerationMethods ?? []).includes("generateContent"))
+      .map((m: { name: string }) => m.name.replace("models/", ""));
+    const ver = (n: string) => parseFloat(n.match(/gemini-([\d.]+)/)?.[1] ?? "0");
+    ok.sort((a: string, b: string) => ver(b) - ver(a));
+    modeloElegido = ok[0] ?? "gemini-flash-latest";
+    console.log("modelo gemini:", modeloElegido);
+  } catch (_) {
+    modeloElegido = "gemini-flash-latest";
+  }
+  return modeloElegido;
+}
+
 async function gemini(historial: { role: string; text: string }[], contexto: string): Promise<string> {
-  const modelo = env("GEMINI_MODEL", "gemini-2.5-flash");
+  const modelo = await elegirModelo();
   const contents = historial.map((h) => ({ role: h.role === "bot" ? "model" : "user", parts: [{ text: h.text }] }));
   contents[contents.length - 1].parts[0].text += `\n\n[Productos del catálogo relacionados con este mensaje — usalos solo si sirven]\n${contexto}`;
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${env("GEMINI_API_KEY")}`, {
