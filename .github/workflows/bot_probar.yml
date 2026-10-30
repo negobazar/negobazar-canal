@@ -6,7 +6,7 @@ on:
     inputs:
       preguntas:
         description: "Preguntas separadas por |"
-        default: "Hola, qué venden?|Tienen sartenes Hudson?|Cuál es la compra mínima?|Hacen envíos a Córdoba?|Quiero comprar 2 tazas nada más|Ok quiero cerrar el pedido"
+        default: "Hola, qué venden?|Tienen sartenes Hudson?|Cuál es la compra mínima?|Soy de Lanús, puedo pagar en efectivo?|Quiero comprar solo por 200 mil, se puede?|Soy de Córdoba, tengo 3 locales y una distribuidora, cómo trabajan?|Ok quiero cerrar el pedido"
 
 permissions:
   contents: write

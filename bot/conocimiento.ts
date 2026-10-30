@@ -15,9 +15,19 @@ CÓMO COMPRAR
 - Primera compra: bienvenidos, te ayudamos a armar el primer pedido.
 - Por qué el mínimo: un pedido completo da mejores precios, más variedad y stock por más tiempo. La variedad vende.
 
-FORMAS DE PAGO
-- Efectivo, transferencia bancaria o depósito bancario.
+FORMAS DE PAGO (pedidos de $750.000 o más)
+- Clientes de CABA y GBA: pueden pagar el pedido en EFECTIVO al recibirlo, reservándolo antes con una transferencia del 10% del total (seña).
+- Clientes del interior del país (provincias): el pedido se abona con transferencia del TOTAL antes del despacho.
 - Una vez enviados los datos de pago, hay 72 horas para abonar y mandar el comprobante.
+
+COMPRAS MENORES A $750.000 (excepción)
+- Se pueden hacer, pero los precios tienen un recargo del 20% sobre el precio mayorista publicado.
+- Motivo (explicarlo con buena onda): el precio mayorista existe para quienes compran volumen y revenden; si vendiéramos al mismo precio en cantidades chicas, rompemos la cadena de venta y perjudicamos a nuestros propios clientes revendedores.
+- En este caso el pago es ÚNICAMENTE con transferencia previa del total (no efectivo, no seña).
+
+CLIENTES GRANDES DEL INTERIOR
+- Si un cliente de provincia muestra que es un comprador grande (varios locales, distribuidora, pedidos de varios millones, compra frecuente, mucho volumen), se lo puede invitar a venir a conocer el depósito en su primera compra. La visita se coordina con el equipo.
+- Si no es un cliente grande, hace el pedido normalmente y lo abona con transferencia previa del total.
 
 ENVÍOS
 - CABA y GBA: con logística propia, sin cargo, en las zonas habilitadas.
