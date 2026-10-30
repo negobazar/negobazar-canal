@@ -75,6 +75,7 @@ Reglas:
 - Nunca inventes productos, precios, descuentos ni promociones. Los precios son SIN IVA y se confirman al tomar el pedido.
 - Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link, y aclarale una vez que los precios son *sin IVA*. Si está sin stock, decilo y ofrecé alternativas.
 - Recordá el mínimo de compra ($750.000, combinando rubros) cuando sea útil, sin repetirlo en cada mensaje.
+- CATÁLOGO: si el cliente pide el catálogo, la lista de precios, "qué productos tienen" en general o "mandame todo", respondé algo corto tipo "¡Te mando nuestro catálogo completo en PDF! 📒 Tiene fotos, códigos y precios mayoristas (sin IVA)." y agregá la etiqueta [CATALOGO] al final. El PDF se manda solo. Después ofrecé ayudarlo a armar el pedido o buscarle algún producto puntual. Si ya se lo mandaste en esta conversación, no lo vuelvas a mandar salvo que lo pida de nuevo.
 - CIERRE DE PEDIDO: cuando el cliente quiere hacer o cerrar el pedido:
   1) Confirmá la lista final de productos (código y cantidad), respetando el mínimo y el múltiplo de cada producto.
   2) Pedí los datos que falten, de a uno o dos por mensaje: nombre y apellido o razón social; CUIT o DNI; dirección de entrega con localidad; mail (opcional); forma de pago según su zona. El teléfono ya lo tenemos.
@@ -143,6 +144,18 @@ async function enviar(to: string, body: string) {
 }
 
 const pendientes = new Map<string, Record<string, unknown>>();
+const catalogos = new Set<string>();
+const CATALOGO_URL = "https://github.com/negobazar/negobazar-canal/releases/download/catalogo/catalogo-negobazar.pdf";
+
+async function enviarCatalogo(chat: string) {
+  const r = await fetch(`${WHAPI}/messages/document`, {
+    method: "POST", headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ to: chat, media: CATALOGO_URL, filename: "Catalogo-Negobazar.pdf", caption: "📒 Catálogo mayorista Negobazar — precios sin IVA, sujetos a stock. Compra mínima $750.000." }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (j?.message?.id) await kv.set(["enviado", j.message.id], 1, { expireIn: 86400000 });
+  return j;
+}
 
 async function bajarFoto(url: string): Promise<Uint8Array | undefined> {
   try {
@@ -205,6 +218,7 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
     try { pedido = JSON.parse(mp[1].trim().replace(/^```json|```$/g, "")); } catch (_) { pedido = null; }
     resp = resp.replace(mp[0], "").trim();
   }
+  if (resp.includes("[CATALOGO]")) { catalogos.add(chat); resp = resp.replaceAll("[CATALOGO]", "").trim(); }
   const derivar = resp.includes("[DERIVAR]") || !!pedido;
   resp = resp.replaceAll("[DERIVAR]", "").trim();
   if (pedido) pendientes.set(chat, pedido);
@@ -260,6 +274,7 @@ async function webhook(req: Request): Promise<Response> {
       const resp = await responder(chat, texto, m.from_name ?? "");
       const r = await enviar(chat, resp);
       await log(m, "respondido " + JSON.stringify(r ?? "").slice(0, 80));
+      if (catalogos.has(chat)) { catalogos.delete(chat); const rc = await enviarCatalogo(chat); await log(m, "catalogo " + JSON.stringify(rc).slice(0, 80)); }
       const ped = pendientes.get(chat);
       if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); }
     } catch (e) {
