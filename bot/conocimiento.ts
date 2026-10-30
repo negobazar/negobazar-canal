@@ -23,7 +23,7 @@ FORMAS DE PAGO (pedidos de $750.000 o más)
 COMPRAS MENORES A $750.000 (excepción)
 - Se pueden hacer, pero los precios tienen un recargo del 20% sobre el precio mayorista publicado.
 - Motivo (explicarlo con buena onda): el precio mayorista existe para quienes compran volumen y revenden; si vendiéramos al mismo precio en cantidades chicas, rompemos la cadena de venta y perjudicamos a nuestros propios clientes revendedores.
-- En este caso el pago es ÚNICAMENTE con transferencia previa del total (no efectivo, no seña).
+- En este caso el pago es ÚNICAMENTE con transferencia previa del total (no efectivo, no seña): el pedido se arma recién cuando se acredita la transferencia.
 - El envío NO es gratis en compras menores:
   · CABA: $10.000.
   · GBA: $15.000.
