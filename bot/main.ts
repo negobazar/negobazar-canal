@@ -291,6 +291,34 @@ if (!(await kv.get(["prueba_envio", "2026-10-30-pago"])).value && env("AVISO_CHA
   await kv.set(["prueba_envio", "2026-10-30-pago"], { t: new Date().toISOString(), r: JSON.stringify(r).slice(0, 300) });
 }
 
+// Envio unico: combos armados de $750k a Davo (11 6816-9442) — resumen + foto de cada producto.
+const COMBOS_KEY = ["combos_envio", "2026-10-30"];
+async function enviarCombos() {
+  const H = { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" };
+  const to = "5491168169442@s.whatsapp.net";
+  const $ = (v: number) => "$" + Math.round(v).toLocaleString("es-AR");
+  const combos = JSON.parse(await Deno.readTextFile(new URL("./combos.json", import.meta.url)));
+  const res: string[] = [];
+  const post = async (ruta: string, d: Record<string, unknown>) => {
+    const r = await fetch(WHAPI + ruta, { method: "POST", headers: H, body: JSON.stringify({ to, ...d }) });
+    res.push(ruta.split("/")[2] + " " + r.status); await r.text(); await new Promise((ok) => setTimeout(ok, 1500));
+  };
+  let i = 0;
+  for (const c of combos) {
+    i++;
+    const lin = [`*COMBO ${i}: ${String(c.nombre).toUpperCase()}*`, ""];
+    for (const it of c.items) lin.push(`• ${it.q} x ${it.n} (cód. ${it.c}) — ${$(it.p)} c/u = ${$(it.p * it.q)}`);
+    lin.push("", `*TOTAL: ${$(c.total)}* (sin IVA)`, `${c.items.length} productos · fotos a continuación 👇`);
+    await post("/messages/text", { body: lin.join("\n") });
+    for (const it of c.items) await post("/messages/image", { media: it.img, caption: `Combo ${i} · ${it.n}\nCód. ${it.c} · ${it.q} u. · ${$(it.p)} c/u` });
+    await kv.set(COMBOS_KEY, { t: new Date().toISOString(), r: res.join(", ") });
+  }
+}
+if (!(await kv.get(COMBOS_KEY)).value) {
+  await kv.set(COMBOS_KEY, { t: new Date().toISOString(), r: "enviando" });
+  enviarCombos().catch((e) => kv.set(COMBOS_KEY, { t: new Date().toISOString(), r: "ERROR " + String(e) }));
+}
+
 Deno.serve(async (req) => {
   const url = new URL(req.url);
   if (req.method === "POST" && url.pathname === "/webhook") return webhook(req);
@@ -308,6 +336,7 @@ Deno.serve(async (req) => {
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
       gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30d", ultimo_error: e,
       prueba_envio: (await kv.get(["prueba_envio", "2026-10-30-pago"])).value,
+      combos: (await kv.get(COMBOS_KEY)).value,
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
       whapi: await (async () => { try {
         const h = await fetch(`${WHAPI}/health?wakeup=false`, { headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}` } });

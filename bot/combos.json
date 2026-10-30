@@ -1,0 +1,400 @@
+[
+ {
+  "nombre": "Kit Cocina Hudson",
+  "items": [
+   {
+    "c": "6328",
+    "n": "Cacerola Hudson Gala 26Cm",
+    "p": 55370,
+    "q": 2,
+    "img": "https://www.distriecono.com.ar/thumb/6327_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "6333",
+    "n": "Wok Hudson Gala 28Cm",
+    "p": 40224,
+    "q": 2,
+    "img": "https://www.distriecono.com.ar/thumb/6333_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "6334",
+    "n": "Bifera Hudson Gala 26Cm",
+    "p": 39159,
+    "q": 2,
+    "img": "https://www.distriecono.com.ar/thumb/6334_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "5236",
+    "n": "Set X5 Utensilios Silicona Gris Cl. Hudson",
+    "p": 32868,
+    "q": 3,
+    "img": "https://www.distriecono.com.ar/thumb/5236_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "6330",
+    "n": "Sarten Hudson Gala 24Cm",
+    "p": 23533,
+    "q": 4,
+    "img": "https://www.distriecono.com.ar/thumb/6329_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "0193",
+    "n": "Set Cubiertos 24Pz. Hudson Basic Negro",
+    "p": 19823,
+    "q": 5,
+    "img": "https://www.distriecono.com.ar/thumb/0193_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "6335",
+    "n": "Jarro Hudson Gala 14Cm",
+    "p": 19345,
+    "q": 5,
+    "img": "https://www.distriecono.com.ar/thumb/6335_00_800x800.jpg",
+    "m": "Hudson"
+   },
+   {
+    "c": "0141",
+    "n": "Cuchara Hudson Daily Pack X12",
+    "p": 17298,
+    "q": 6,
+    "img": "https://www.distriecono.com.ar/thumb/0141_00_800x800.jpg",
+    "m": "Hudson"
+   }
+  ],
+  "total": 761870
+ },
+ {
+  "nombre": "Kit Bazar para arrancar",
+  "items": [
+   {
+    "c": "9430",
+    "n": "Vaso Vidrio Bombre Rayado 470Ml. Pack X6",
+    "p": 13502,
+    "q": 6,
+    "img": "https://www.distriecono.com.ar/thumb/9430_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "8219",
+    "n": "Escurridor Cubiertos 4 Div. Acero Inox.",
+    "p": 6936,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/8219_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "5183",
+    "n": "Colador Acero Inox. 22Cm. C/Mango",
+    "p": 4546,
+    "q": 18,
+    "img": "https://www.distriecono.com.ar/thumb/5183_00_800x800.jpg",
+    "m": "Crystal Rock"
+   },
+   {
+    "c": "5843",
+    "n": "Hermetico Plastart Alto 4X 5,3 Lts Grande",
+    "p": 3918,
+    "q": 18,
+    "img": "https://www.distriecono.com.ar/thumb/5843_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "7244",
+    "n": "Lunchera Infantil Doble C/Cubiertos",
+    "p": 3375,
+    "q": 24,
+    "img": "https://www.distriecono.com.ar/thumb/7244_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "8042",
+    "n": "Encendedor Magiclick Art",
+    "p": 2600,
+    "q": 30,
+    "img": "https://www.distriecono.com.ar/thumb/8042_00_800x800.jpg",
+    "m": "Magiclick"
+   },
+   {
+    "c": "0821",
+    "n": "Tortera Silicona Individual 13X5Cm",
+    "p": 2122,
+    "q": 42,
+    "img": "https://www.distriecono.com.ar/thumb/0821_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "9965",
+    "n": "Botella Vidrio Rayada Transp. T/Corcho 950Ml",
+    "p": 5041,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/9965_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "8454",
+    "n": "Prensa Ajo 2En1 Acero/Plastico",
+    "p": 1990,
+    "q": 42,
+    "img": "https://www.distriecono.com.ar/thumb/8454_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "9962",
+    "n": "Jarra Vidrio Labrado 500Ml",
+    "p": 1800,
+    "q": 48,
+    "img": "https://www.distriecono.com.ar/thumb/9962_00_800x800.jpg",
+    "m": ""
+   }
+  ],
+  "total": 795192
+ },
+ {
+  "nombre": "Kit Limpieza",
+  "items": [
+   {
+    "c": "1203",
+    "n": "Esponja C/Mango Y Dosificador Larhaus",
+    "p": 4988,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/1203_00_800x800.jpg",
+    "m": "Larhaus"
+   },
+   {
+    "c": "0497",
+    "n": "Bolsa Para Lavar Zapatillas",
+    "p": 4796,
+    "q": 18,
+    "img": "https://www.distriecono.com.ar/thumb/0497_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "2781",
+    "n": "Rollo Sacapelusa Afeitadora + 2 Repuestos",
+    "p": 2991,
+    "q": 30,
+    "img": "https://www.distriecono.com.ar/thumb/2781_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "8599",
+    "n": "Aromatizante Ambiente Y Telas 200Ml",
+    "p": 2534,
+    "q": 30,
+    "img": "https://www.distriecono.com.ar/thumb/8599_00_800x800.jpg",
+    "m": "Iluminarte"
+   },
+   {
+    "c": "1520",
+    "n": "Cepillo Parrillero 3 Usos",
+    "p": 3521,
+    "q": 24,
+    "img": "https://www.distriecono.com.ar/thumb/1520_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "2248",
+    "n": "Cubre Calzado Microfibra Pantumopa Pack X2",
+    "p": 5804,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/2248_00_800x800.jpg",
+    "m": "Senzen"
+   },
+   {
+    "c": "4372",
+    "n": "Paño Microfibra Esencial Muebles Senzen",
+    "p": 1514,
+    "q": 54,
+    "img": "https://www.distriecono.com.ar/thumb/4372_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3671",
+    "n": "Cesto Ropa C/Tapa Simil Ratan Negro",
+    "p": 14153,
+    "q": 6,
+    "img": "https://www.distriecono.com.ar/thumb/3671_00_800x800.jpg",
+    "m": "Poo"
+   },
+   {
+    "c": "3366",
+    "n": "Mopa Centrifuga C/Escurr. Acero",
+    "p": 13536,
+    "q": 6,
+    "img": "https://www.distriecono.com.ar/thumb/3366_00_800x800.jpg",
+    "m": "Fary Home"
+   },
+   {
+    "c": "1230",
+    "n": "Kit X6 Articulos Limpieza Plastico",
+    "p": 7007,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/1230_00_800x800.jpg",
+    "m": "Hants"
+   }
+  ],
+  "total": 798060
+ },
+ {
+  "nombre": "Kit Camping y Jardín temporada",
+  "items": [
+   {
+    "c": "0565",
+    "n": "Banqueta Acero/Tela Plegable",
+    "p": 9835,
+    "q": 11,
+    "img": "https://www.distriecono.com.ar/thumb/0565_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3640",
+    "n": "Silla Plastica Simil Ratan Negra",
+    "p": 14755,
+    "q": 7,
+    "img": "https://www.distriecono.com.ar/thumb/3640_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3748",
+    "n": "Junta Hoja",
+    "p": 4260,
+    "q": 24,
+    "img": "https://www.distriecono.com.ar/thumb/3748_00_800x800.jpg",
+    "m": "Genesis"
+   },
+   {
+    "c": "3747",
+    "n": "Botella C/Bebedero Mascota",
+    "p": 8137,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/3747_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3712",
+    "n": "Regadera N.8 Quechua",
+    "p": 7628,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/3712_00_800x800.jpg",
+    "m": "Quechua"
+   },
+   {
+    "c": "3756",
+    "n": "Manguera Cristal 1/2X15Mts.",
+    "p": 10021,
+    "q": 10,
+    "img": "https://www.distriecono.com.ar/thumb/3756_00_800x800.jpg",
+    "m": "Plastirrabit"
+   },
+   {
+    "c": "3758",
+    "n": "Sillon Simil Ratan Reforzado Negro",
+    "p": 18528,
+    "q": 5,
+    "img": "https://www.distriecono.com.ar/thumb/3758_00_800x800.jpg",
+    "m": "Poo"
+   },
+   {
+    "c": "0114",
+    "n": "Escalera Aluminio 4 Escalones",
+    "p": 54859,
+    "q": 1,
+    "img": "https://www.distriecono.com.ar/thumb/0114_00_800x800.jpg",
+    "m": "Mor"
+   }
+  ],
+  "total": 750599
+ },
+ {
+  "nombre": "Kit Hogar y Baño",
+  "items": [
+   {
+    "c": "6531",
+    "n": "Cortina Baño Peva Panal De Abeja",
+    "p": 9717,
+    "q": 9,
+    "img": "https://www.distriecono.com.ar/thumb/6531_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "4931",
+    "n": "Pastilla Limpia Lavarropas Caja X12",
+    "p": 7073,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/4931_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3522",
+    "n": "Cesto Ropa Tribal Tela C/Asas Cuerina",
+    "p": 5954,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/3522_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "2455",
+    "n": "Alfombra Pelo Corto Suave",
+    "p": 5701,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/2455_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "2010",
+    "n": "Escobilla Redonda Facetada M/Madera",
+    "p": 5335,
+    "q": 12,
+    "img": "https://www.distriecono.com.ar/thumb/2010_00_800x800.jpg",
+    "m": "Benabi"
+   },
+   {
+    "c": "2250",
+    "n": "Manopla/Guante Exfoliante Grande",
+    "p": 2491,
+    "q": 36,
+    "img": "https://www.distriecono.com.ar/thumb/2250_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "6524",
+    "n": "Set 5Pz De Ducha+ Estuche",
+    "p": 8687,
+    "q": 10,
+    "img": "https://www.distriecono.com.ar/thumb/6524_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "1544",
+    "n": "Dosificador + Difusor Vidrio C/Base Bambu",
+    "p": 11738,
+    "q": 7,
+    "img": "https://www.distriecono.com.ar/thumb/1544_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "3906",
+    "n": "Organizador P/ Baño Inodoro 3 Estantes",
+    "p": 16322,
+    "q": 5,
+    "img": "https://www.distriecono.com.ar/thumb/3906_00_800x800.jpg",
+    "m": ""
+   },
+   {
+    "c": "6716",
+    "n": "Espejo Oval 60X40Cm. Borde Negro",
+    "p": 19208,
+    "q": 4,
+    "img": "https://www.distriecono.com.ar/thumb/6716_00_800x800.jpg",
+    "m": ""
+   }
+  ],
+  "total": 793363
+ }
+]
