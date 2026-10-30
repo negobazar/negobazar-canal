@@ -76,7 +76,7 @@ def fb_video(url, texto):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas"])
+    ap.add_argument("tipo", choices=["imagen", "reel", "historia", "carrusel", "cuentas", "ultimos"])
     ap.add_argument("url", nargs="?")
     ap.add_argument("texto", nargs="?", default="")
     ap.add_argument("--solo", choices=["ig", "fb"])
@@ -86,10 +86,15 @@ def main():
     if a.tipo == "cuentas":
         print(json.dumps(api("GET", PAGE or "me", fields="id,name,instagram_business_account{id,username}"), ensure_ascii=False))
         return
+    if a.tipo == "ultimos":
+        print(json.dumps(api("GET", f"{IG}/media", fields="id,media_type,permalink,timestamp", limit=3), ensure_ascii=False))
+        print(json.dumps(api("GET", f"{PAGE}/posts", fields="id,created_time,permalink_url", limit=3), ensure_ascii=False))
+        return
     hechos = {}
     if a.solo != "fb" and IG:
         if a.tipo == "imagen": hechos["ig"] = ig_imagen(a.url, a.texto)
         elif a.tipo == "reel": hechos["ig"] = ig_reel(a.url, a.texto)
+        print("IG listo:", hechos, flush=True)
         elif a.tipo == "historia": hechos["ig"] = ig_historia(a.url)
         elif a.tipo == "carrusel": hechos["ig"] = ig_carrusel(a.url.split(","), a.texto)
     if a.solo != "ig" and PAGE and a.tipo in ("imagen", "reel"):
