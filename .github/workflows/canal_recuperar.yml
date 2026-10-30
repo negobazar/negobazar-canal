@@ -1,0 +1,44 @@
+name: Canal de WhatsApp - recuperar franja (en paralelo)
+
+# Publica YA todo lo de una franja de la agenda de hoy, uno cada N minutos (sin esperar los horarios).
+on:
+  workflow_dispatch:
+    inputs:
+      desde:
+        description: "Desde (HH:MM de la agenda)"
+        default: "18:00"
+      hasta:
+        description: "Hasta (HH:MM de la agenda)"
+        default: "22:30"
+      cada:
+        description: "Minutos entre publicaciones"
+        default: "2"
+      saltear:
+        description: "Saltear los primeros N items (ya publicados)"
+        default: "0"
+      terminar:
+        description: "HH:MM en que se publica el cierre y termina (vacio = al final)"
+        default: "22:00"
+      historias_cada:
+        description: "Cada cuantas publicaciones sube tambien un estado (0 = no)"
+        default: "4"
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: dia
+          path: dia
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Publicar seguido
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
+        run: python publicador.py --agenda dia/agenda.json --desde "${{ inputs.desde }}" --hasta "${{ inputs.hasta }}" --cada "${{ inputs.cada }}" --saltear "${{ inputs.saltear }}" --terminar "${{ inputs.terminar }}" --historias-cada "${{ inputs.historias_cada }}"
