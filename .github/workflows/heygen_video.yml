@@ -1,0 +1,39 @@
+name: HeyGen - generar video
+
+# Genera un video con el clon segun heygen/config.json y lo deja en la rama heygen-videos.
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: "Archivo de configuracion"
+        default: "heygen/config.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: heygen
+  cancel-in-progress: false
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Generar
+        env:
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+        run: python heygen_video.py "${{ inputs.config }}" out
+      - name: Guardar en rama heygen-videos
+        if: always()
+        run: |
+          cd out
+          git init -q -b heygen-videos
+          git config user.name bot; git config user.email bot@negobazar
+          git add -A; git commit -qm "video heygen $(date -u +%FT%TZ)" || exit 0
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" heygen-videos
