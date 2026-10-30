@@ -84,7 +84,7 @@ def main():
     if not T:
         sys.exit("Falta META_TOKEN")
     if a.tipo == "cuentas":
-        print(json.dumps(api("GET", "me", fields="id,name,instagram_business_account{id,username}"), ensure_ascii=False))
+        print(json.dumps(api("GET", PAGE or "me", fields="id,name,instagram_business_account{id,username}"), ensure_ascii=False))
         return
     hechos = {}
     if a.solo != "fb" and IG:

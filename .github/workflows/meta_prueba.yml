@@ -1,0 +1,34 @@
+name: Meta - probar conexion y publicar
+
+on:
+  workflow_dispatch:
+    inputs:
+      tipo: {description: "cuentas | imagen | reel | historia | carrusel", default: "cuentas"}
+      url: {description: "URL publica del archivo", default: ""}
+      texto: {description: "Texto del posteo", default: ""}
+      solo: {description: "vacio = IG y FB | ig | fb", default: ""}
+
+permissions:
+  contents: write
+
+env:
+  FB_PAGE_ID: "100119982130545"      # NegoBazar
+  IG_USER_ID: "17841446090928334"    # @negobazar
+
+jobs:
+  meta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+        run: |
+          set -o pipefail
+          python tools/meta_publicar.py "${{ inputs.tipo }}" "${{ inputs.url }}" "${{ inputs.texto }}" ${{ inputs.solo && format('--solo {0}', inputs.solo) || '' }} 2>&1 | tee resultado.txt
+      - if: always()
+        run: |
+          mkdir -p o && cp resultado.txt o/ 2>/dev/null || echo "sin resultado" > o/resultado.txt
+          cd o && git init -q -b meta-res && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm res && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" meta-res
