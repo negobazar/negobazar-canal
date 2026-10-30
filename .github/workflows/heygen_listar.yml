@@ -1,0 +1,58 @@
+name: HeyGen - listar clones y voces
+
+# Lee los avatares (clones) y voces de la cuenta de HeyGen y deja la lista en la rama heygen-datos.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/heygen_listar.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  listar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consultar HeyGen
+        env:
+          HEYGEN_API_KEY: ${{ secrets.HEYGEN_API_KEY }}
+        run: |
+          mkdir -p out
+          if [ -z "$HEYGEN_API_KEY" ]; then
+            echo '{"error":"falta el secret HEYGEN_API_KEY"}' > out/estado.json
+          else
+            H="X-Api-Key: $HEYGEN_API_KEY"
+            curl -sS -H "$H" https://api.heygen.com/v2/avatars -o out/avatars_raw.json -w '%{http_code}' > out/avatars_http.txt || true
+            curl -sS -H "$H" https://api.heygen.com/v2/voices  -o out/voices_raw.json  -w '%{http_code}' > out/voices_http.txt  || true
+            curl -sS -H "$H" https://api.heygen.com/v2/user/remaining_quota -o out/cuota.json -w '%{http_code}' > out/cuota_http.txt || true
+            python3 - <<'PY'
+          import json
+          def cargar(p):
+              try: return json.load(open(p))
+              except Exception as e: return {"error": str(e)}
+          av = cargar("out/avatars_raw.json"); vo = cargar("out/voices_raw.json")
+          d = (av.get("data") or {})
+          propios = [a for a in d.get("avatars", []) if not a.get("premium") and not str(a.get("avatar_id","")).startswith(("Abigail","Adriana","Amelia"))]
+          res = {
+            "http": {k: open(f"out/{k}_http.txt").read() for k in ("avatars","voices","cuota")},
+            "error_avatars": av.get("error"),
+            "talking_photos": [{"id": t.get("talking_photo_id"), "nombre": t.get("talking_photo_name")} for t in d.get("talking_photos", [])],
+            "avatars": [{"id": a.get("avatar_id"), "nombre": a.get("avatar_name"), "tipo": a.get("type")} for a in d.get("avatars", [])],
+            "voces_es": [{"id": v.get("voice_id"), "nombre": v.get("name"), "idioma": v.get("language"), "genero": v.get("gender")}
+                         for v in ((vo.get("data") or {}).get("voices") or []) if "span" in str(v.get("language","")).lower() or "es" == str(v.get("language","")).lower()[:2]],
+            "cuota": cargar("out/cuota.json"),
+          }
+          json.dump(res, open("out/resumen.json","w"), ensure_ascii=False, indent=1)
+          print("avatars", len(res["avatars"]), "fotos", len(res["talking_photos"]), "voces es", len(res["voces_es"]))
+          PY
+            rm -f out/avatars_raw.json out/voices_raw.json
+          fi
+      - name: Guardar en rama heygen-datos
+        run: |
+          cd out
+          git init -q -b heygen-datos
+          git config user.name bot; git config user.email bot@negobazar
+          git add -A; git commit -qm "lista heygen $(date -u +%FT%TZ)"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" heygen-datos
