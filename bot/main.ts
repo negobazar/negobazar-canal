@@ -106,7 +106,7 @@ async function gemini(historial: { role: string; text: string }[], contexto: str
     .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
   if (!txt) console.log("gemini sin respuesta", JSON.stringify(j).slice(0, 500));
   // WhatsApp usa *un* asterisco para negrita
-  return txt.replace(/\*\*(.+?)\*\*/g, "*$1*").trim() ||
+  return txt.replace(/\*\*(.+?)\*\*/g, "*$1*").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, "$2").trim() ||
     "¡Gracias por escribir a Negobazar! En un ratito te responde alguien del equipo 🙌 [DERIVAR]";
 }
 
