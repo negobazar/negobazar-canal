@@ -221,8 +221,15 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
 
 async function webhook(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
+  const log = async (m: Record<string, unknown>, que: string) => {
+    const l = ((await kv.get(["log"])).value as unknown[] ?? []);
+    l.unshift({ t: new Date().toISOString(), chat: String(m.chat_id ?? "").slice(-8), from_me: m.from_me, tipo: m.type, que });
+    await kv.set(["log"], l.slice(0, 15));
+  };
+  if (!(body?.messages ?? []).length) await log({ type: Object.keys(body ?? {}).join(",") }, "webhook sin mensajes");
   for (const m of body?.messages ?? []) {
     const chat: string = m.chat_id ?? "";
+    await log(m, "recibido");
     if (!chat.endsWith("@s.whatsapp.net")) continue; // ni grupos, ni canales, ni estados
     const cmd = String(m.text?.body ?? "").trim().toLowerCase();
     // "#bot" (desde el celular de Negobazar, dentro del chat) o "#reiniciar" (desde el cliente):
@@ -243,7 +250,7 @@ async function webhook(req: Request): Promise<Response> {
     await kv.set(["visto", m.id], 1, { expireIn: 86400000 });
     const numero = chat.split("@")[0];
     if (env("MODO", "prueba") !== "activo" && !env("PERMITIDOS").split(",").map((x) => x.trim()).includes(numero)) continue;
-    if ((await kv.get(["pausa", chat])).value) continue;
+    if ((await kv.get(["pausa", chat])).value) { await log(m, "chat en pausa"); continue; }
     const texto: string = m.text?.body ?? m.image?.caption ?? m.video?.caption ?? "";
     if (!texto) {
       if (m.type === "audio" || m.type === "voice") await enviar(chat, "¡Hola! Por ahora no puedo escuchar audios 🙈 ¿Me lo escribís así te respondo al toque?");
@@ -272,7 +279,8 @@ Deno.serve(async (req) => {
     const e = (await kv.get(["ultimo_error"])).value;
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
-      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), ultimo_error: e });
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30c", ultimo_error: e,
+      pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length, log: (await kv.get(["log"])).value });
   }
   if (url.pathname === "/despausar") {
     if (!env("CLAVE_ADMIN") || url.searchParams.get("clave") !== env("CLAVE_ADMIN")) return new Response("no", { status: 403 });
