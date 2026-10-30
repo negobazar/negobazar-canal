@@ -224,6 +224,15 @@ async function webhook(req: Request): Promise<Response> {
   for (const m of body?.messages ?? []) {
     const chat: string = m.chat_id ?? "";
     if (!chat.endsWith("@s.whatsapp.net")) continue; // ni grupos, ni canales, ni estados
+    const cmd = String(m.text?.body ?? "").trim().toLowerCase();
+    // "#bot" (desde el celular de Negobazar, dentro del chat) o "#reiniciar" (desde el cliente):
+    // el bot vuelve a atender ese chat y arranca la conversación de cero.
+    if ((m.from_me && cmd === "#bot") || (!m.from_me && cmd === "#reiniciar")) {
+      await kv.delete(["pausa", chat]);
+      await kv.delete(["hist", chat]);
+      if (!m.from_me) await enviar(chat, "🔄 Listo, empezamos de nuevo. ¿En qué te puedo ayudar?");
+      continue;
+    }
     if (m.from_me) {
       // Si no lo mandó el bot, es una persona del equipo: el bot se calla en ese chat.
       const fueBot = (await kv.get(["enviado", m.id])).value || m.source === "api";
