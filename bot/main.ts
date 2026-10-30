@@ -104,7 +104,12 @@ async function gemini(historial: { role: string; text: string }[], contexto: str
   }
   const txt = j?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought)
     .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
-  if (!txt) console.log("gemini sin respuesta", JSON.stringify(j).slice(0, 500));
+  if (!txt) {
+    const err = JSON.stringify(j).replace(env("GEMINI_API_KEY") || "@@", "***").slice(0, 600);
+    console.log("gemini sin respuesta", err);
+    await kv.set(["ultimo_error"], { cuando: new Date().toISOString(), err }, { expireIn: 7 * 86400000 });
+    return "[FALLA_IA]";
+  }
   // WhatsApp usa *un* asterisco para negrita
   return txt.replace(/\*\*(.+?)\*\*/g, "*$1*").replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, "$2").trim() ||
     "¡Gracias por escribir a Negobazar! En un ratito te responde alguien del equipo 🙌 [DERIVAR]";
@@ -128,6 +133,10 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
   const ultimosUser = hist.filter((h) => h.role === "user").slice(-2).map((h) => h.text).join(" ");
   const ctx = fichas(buscar(await productos(), ultimosUser));
   let resp = await gemini(hist, (nombre ? `(El cliente se llama ${nombre})\n` : "") + ctx);
+  if (resp === "[FALLA_IA]") {
+    // No pausa el chat ni guarda historial: el proximo mensaje se vuelve a intentar.
+    return "¡Hola! Gracias por escribir a Negobazar 🙌 En un momento te respondemos.";
+  }
   const derivar = resp.includes("[DERIVAR]");
   resp = resp.replaceAll("[DERIVAR]", "").trim();
   await kv.set(clave, [...hist, { role: "bot", text: resp }].slice(-12), { expireIn: 7 * 86400000 });
@@ -178,6 +187,18 @@ Deno.serve(async (req) => {
     const q = url.searchParams.get("q") ?? "";
     const resp = q ? await responder(chat, q, "Prueba") : "";
     return new Response(resp, { headers: { "content-type": "text/plain; charset=utf-8" } });
+  }
+  if (url.pathname === "/diag") {
+    const e = (await kv.get(["ultimo_error"])).value;
+    const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
+    return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), ultimo_error: e });
+  }
+  if (url.pathname === "/despausar") {
+    if (!env("CLAVE_ADMIN") || url.searchParams.get("clave") !== env("CLAVE_ADMIN")) return new Response("no", { status: 403 });
+    let n = 0;
+    for await (const x of kv.list({ prefix: ["pausa"] })) { await kv.delete(x.key); n++; }
+    return new Response(`Listo: ${n} chats despausados`);
   }
   if (url.pathname === "/") return new Response(`Bot Negobazar OK · ${(await productos()).length} productos`);
   return new Response("not found", { status: 404 });
