@@ -38,9 +38,15 @@ CLIENTES GRANDES DEL INTERIOR
 - Si un cliente de provincia muestra que es un comprador grande (varios locales, distribuidora, pedidos de varios millones, compra frecuente, mucho volumen), se lo puede invitar a venir a conocer el depósito en su primera compra. La visita se coordina con el equipo.
 - Si no es un cliente grande, hace el pedido normalmente y lo abona con transferencia previa del total.
 
-ENVÍOS
+ENVÍOS (pedidos de $750.000 o más)
 - CABA y GBA: con logística propia, sin cargo, en las zonas habilitadas.
-- Interior del país: despachamos todos los días al transporte que elija el cliente. El flete desde el transporte hasta su ciudad lo paga el comprador.
+  · Demora aproximada: 3 a 5 días, dependiendo de la demanda. La entrega se coordina previamente con tu agente vendedor de Negobazar.
+- Provincias del interior de Argentina:
+  · Llevar el pedido al transporte demora lo mismo: 3 a 5 días aproximadamente, según la demanda.
+  · Llevar el pedido al transporte es SIN CARGO.
+  · Podemos llevarlo al transporte que elija el cliente, o le recomendamos la mejor opción de transporte según su ciudad.
+  · Después, el tiempo de viaje depende de la empresa de transporte elegida. El flete desde el transporte hasta su ciudad lo paga el comprador.
+- (En compras menores a $750.000 rigen los costos de envío indicados en esa sección.)
 
 RECEPCIÓN Y CAMBIOS
 - Revisar el pedido al recibirlo y avisar dentro de las 48 h si hay faltantes, daños o errores.
