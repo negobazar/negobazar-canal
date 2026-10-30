@@ -292,7 +292,7 @@ if (!(await kv.get(["prueba_envio", "2026-10-30-pago"])).value && env("AVISO_CHA
 }
 
 // Envio unico: combos armados de $750k a Davo (11 6816-9442) — resumen + foto de cada producto.
-const COMBOS_KEY = ["combos_envio", "2026-10-30"];
+const COMBOS_KEY = ["combos_envio", "2026-10-30b"];
 async function enviarCombos() {
   const H = { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" };
   const to = "5491168169442@s.whatsapp.net";
