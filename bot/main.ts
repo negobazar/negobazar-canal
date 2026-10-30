@@ -285,7 +285,11 @@ Deno.serve(async (req) => {
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
       gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30d", ultimo_error: e,
-      pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length, log: (await kv.get(["log"])).value });
+      pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
+      whapi: await (async () => { try {
+        const h = await fetch(`${WHAPI}/health?wakeup=false`, { headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}` } });
+        const j = await h.json(); return { http: h.status, status: j?.status, trial: j?.trial ?? j?.channel?.trial, limits: j?.limits, raw: JSON.stringify(j).slice(0, 400) };
+      } catch (e) { return String(e); } })(), log: (await kv.get(["log"])).value });
   }
   if (url.pathname === "/despausar") {
     if (!env("CLAVE_ADMIN") || url.searchParams.get("clave") !== env("CLAVE_ADMIN")) return new Response("no", { status: 403 });
