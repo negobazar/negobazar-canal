@@ -1,0 +1,38 @@
+👤 Hola, qué venden?
+🤖 ¡Hola Prueba! 👋 En *Negobazar* somos mayoristas de bazar, cocina, hogar, limpieza, textil y camping. Tenemos más de 2.000 productos con reposición constante para tu negocio. 
+
+Contame, ¿qué tipo de comercio tenés o a qué te dedicas? 🛒
+
+👤 Tienen sartenes Hudson?
+🤖 ¡Sí, tenemos sartenes *Hudson*! 🍳 Mirá algunas opciones:
+
+- *Sartén Acero Inox 24cm* (Cód. 7856): *$26.975* c/u (pack x4) [Link](https://www.negobazar.com.ar/search/?q=7856)
+- *Sartén Granito Stone New 20cm* (Cód. 8956): *$17.009* c/u (pack x6) [Link](https://www.negobazar.com.ar/search/?q=8956)
+- *Sartén Doble Daily Antiadh. 20cm* (Cód. 8991): *$21.596* c/u (pack x6) [Link](https://www.negobazar.com.ar/search/?q=8991)
+- *Sartén Daily Antiad. p/ Huevo 14cm* (Cód. 8977): *$8.626* c/u (pack x12) [Link](https://www.negobazar.com.ar/search/?q=8977)
+
+Contame, ¿tenés local a la calle o vendés online? 🏡
+
+👤 Cuál es la compra mínima?
+🤖 La compra mínima es de *$750.000*, y podés combinar todos los rubros que quieras. 📦
+
+¿Estás en CABA, GBA o en el interior del país? 📍
+
+👤 Soy de Lanús, puedo pagar en efectivo?
+🤖 ¡Sí, perfecto! Al ser de GBA, podés pagar en *efectivo al recibir* tu pedido, reservándolo previamente con una transferencia del 10% del total como seña. 💵
+
+Contame, ¿tenés un bazar, un local de otro rubro o hacés revends online?
+
+👤 Quiero comprar solo por 200 mil, se puede?
+🤖 Sí, se puede, pero las compras menores a $750.000 tienen un recargo del 20%. Lo hacemos porque el precio mayorista es para volumen y revender al mismo precio en cantidades chicas rompería la cadena de venta de nuestros revendedores. Igual, si llegás a $750.000 combinando rubros, accedés al precio mayorista normal. ¿Querés que te arme un pedido con el recargo o preferís llegar al mínimo? 😊
+
+👤 Soy de Córdoba, tengo 3 locales y una distribuidora, cómo trabajan?
+🤖 ¡Qué bueno, Prueba! Al ser una distribuidora grande con varios locales, trabajamos con transferencia previa del total antes del despacho y te despachamos al transporte que elijas desde CABA. 🚛
+
+Para compras de gran volumen como las tuyas, además tenemos una *escala de descuentos* (más de $10.000.000 un 5%, y más de $20.000.000 un 5% + 3% adicional). Y dada tu envergadura, ¡te invitamos a venir a conocer nuestro depósito en tu primera compra! 
+
+Le aviso a una persona del equipo para que se ponga en contacto con vos y coordine la visita y los detalles.
+
+👤 Ok quiero cerrar el pedido
+🤖 ¡Perfecto, Prueba! Ya le aviso a alguien del equipo para que se comunique con vos y cierren todos los detalles del pedido y la visita. 🤝
+
