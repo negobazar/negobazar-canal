@@ -1,0 +1,47 @@
+name: Prueba - generar fondo de ambiente con Gemini
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        default: "Fotografía realista de una mesada de cocina moderna de madera clara con fondo de azulejos blancos desenfocado, luz natural de mañana desde una ventana, espacio vacío en el centro de la mesada para apoyar un producto, sin objetos en el centro, estilo foto de catálogo, formato cuadrado"
+
+permissions:
+  contents: write
+
+jobs:
+  fondo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Generar
+        env:
+          K: ${{ secrets.GEMINI_API_KEY }}
+          PROMPT: ${{ inputs.prompt }}
+        run: |
+          mkdir -p out
+          python3 - <<'PY'
+          import json, os, base64, urllib.request
+          K = os.environ["K"]; prompt = os.environ["PROMPT"]
+          log = []
+          for modelo in ["gemini-3.1-flash-image", "gemini-2.5-flash-image", "gemini-3.1-flash-image-preview", "gemini-nano-banana-2.1"]:
+              body = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"responseModalities": ["IMAGE"]}}
+              req = urllib.request.Request(f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={K}",
+                  data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: j = json.loads(r.read())
+              except urllib.error.HTTPError as e:
+                  log.append({modelo: e.code, "msg": e.read().decode()[:300]}); continue
+              partes = j.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+              img = [p for p in partes if "inlineData" in p or "inline_data" in p]
+              if img:
+                  d = img[0].get("inlineData") or img[0].get("inline_data")
+                  open("out/fondo.png", "wb").write(base64.b64decode(d["data"]))
+                  log.append({modelo: "ok"}); break
+              log.append({modelo: "sin imagen", "resp": json.dumps(j)[:300]})
+          json.dump(log, open("out/log.json", "w"), indent=1); print(log)
+          PY
+      - if: always()
+        run: |
+          cd out && git init -q -b fondo-prueba && git config user.name bot && git config user.email bot@negobazar
+          git add -A && git commit -qm fondo && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" fondo-prueba
