@@ -223,7 +223,7 @@ async function webhook(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
   const log = async (m: Record<string, unknown>, que: string) => {
     const l = ((await kv.get(["log"])).value as unknown[] ?? []);
-    l.unshift({ t: new Date().toISOString(), chat: String(m.chat_id ?? "").slice(-8), from_me: m.from_me, tipo: m.type, que });
+    l.unshift({ t: new Date().toISOString(), chat: String(m.chat_id ?? "").split("@")[0].slice(-4), from_me: m.from_me, tipo: m.type, que });
     await kv.set(["log"], l.slice(0, 15));
   };
   if (!(body?.messages ?? []).length) await log({ type: Object.keys(body ?? {}).join(",") }, "webhook sin mensajes");
@@ -256,10 +256,15 @@ async function webhook(req: Request): Promise<Response> {
       if (m.type === "audio" || m.type === "voice") await enviar(chat, "¡Hola! Por ahora no puedo escuchar audios 🙈 ¿Me lo escribís así te respondo al toque?");
       continue;
     }
-    const resp = await responder(chat, texto, m.from_name ?? "");
-    await enviar(chat, resp);
-    const ped = pendientes.get(chat);
-    if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); }
+    try {
+      const resp = await responder(chat, texto, m.from_name ?? "");
+      const r = await enviar(chat, resp);
+      await log(m, "respondido " + JSON.stringify(r ?? "").slice(0, 80));
+      const ped = pendientes.get(chat);
+      if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); }
+    } catch (e) {
+      await log(m, "ERROR " + String(e).slice(0, 200));
+    }
   }
   return new Response("ok");
 }
@@ -279,7 +284,7 @@ Deno.serve(async (req) => {
     const e = (await kv.get(["ultimo_error"])).value;
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
-      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30c", ultimo_error: e,
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30d", ultimo_error: e,
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length, log: (await kv.get(["log"])).value });
   }
   if (url.pathname === "/despausar") {
