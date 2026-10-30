@@ -78,45 +78,30 @@ Reglas:
 INFORMACIÓN DE NEGOBAZAR:
 ${CONOCIMIENTO}`;
 
-let modeloElegido = "";
-async function elegirModelo(): Promise<string> {
-  if (env("GEMINI_MODEL")) return env("GEMINI_MODEL");
-  if (modeloElegido) return modeloElegido;
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env("GEMINI_API_KEY")}`, { signal: AbortSignal.timeout(20000) });
-    const j = await r.json();
-    const ok = (j.models ?? []).filter((m: { name: string; supportedGenerationMethods?: string[] }) =>
-      /gemini-[\d.]+-flash$/.test(m.name) && (m.supportedGenerationMethods ?? []).includes("generateContent"))
-      .map((m: { name: string }) => m.name.replace("models/", ""));
-    const ver = (n: string) => parseFloat(n.match(/gemini-([\d.]+)/)?.[1] ?? "0");
-    ok.sort((a: string, b: string) => ver(b) - ver(a));
-    modeloElegido = ok[0] ?? "gemini-flash-latest";
-    console.log("modelo gemini:", modeloElegido);
-  } catch (_) {
-    modeloElegido = "gemini-flash-latest";
-  }
-  return modeloElegido;
-}
+// Modelos "Lite": responden en menos de 1 segundo. Si uno esta saturado, se prueba el siguiente.
+const MODELOS = (Deno.env.get("GEMINI_MODEL") ?? "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-flash-lite-latest")
+  .split(",").map((x) => x.trim()).filter(Boolean);
 
 async function gemini(historial: { role: string; text: string }[], contexto: string): Promise<string> {
-  const modelo = await elegirModelo();
   const contents = historial.map((h) => ({ role: h.role === "bot" ? "model" : "user", parts: [{ text: h.text }] }));
   contents[contents.length - 1].parts[0].text += `\n\n[Productos del catálogo relacionados con este mensaje — usalos solo si sirven]\n${contexto}`;
-  const llamar = (thinking: Record<string, unknown> | null) =>
+  const llamar = (modelo: string) =>
     fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${env("GEMINI_API_KEY")}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SISTEMA }] },
         contents,
-        generationConfig: { temperature: 0.4, maxOutputTokens: 4096, ...(thinking ? { thinkingConfig: thinking } : {}) },
+        generationConfig: { temperature: 0.4, maxOutputTokens: 2048, thinkingConfig: { thinkingLevel: "minimal" } },
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(20000),
     }).then((r) => r.json()).catch((e) => ({ error: String(e) }));
-  // Razonamiento bajo para que conteste rapido; si el modelo no acepta la opcion, se reintenta sin ella.
-  let j = await llamar({ thinkingLevel: "low" });
-  if (j?.error?.code === 400) j = await llamar({ thinkingBudget: 0 });
-  if (j?.error?.code === 400) j = await llamar(null);
+  let j: any = {};
+  for (const m of MODELOS) {
+    j = await llamar(m);
+    if (j?.candidates?.length) break;
+    console.log("gemini fallo con", m, JSON.stringify(j).slice(0, 300));
+  }
   const txt = j?.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought)
     .map((p: { text?: string }) => p.text ?? "").join("") ?? "";
   if (!txt) console.log("gemini sin respuesta", JSON.stringify(j).slice(0, 500));
