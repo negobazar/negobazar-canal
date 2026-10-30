@@ -83,7 +83,7 @@ async function elegirModelo(): Promise<string> {
   if (env("GEMINI_MODEL")) return env("GEMINI_MODEL");
   if (modeloElegido) return modeloElegido;
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env("GEMINI_API_KEY")}`);
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${env("GEMINI_API_KEY")}`, { signal: AbortSignal.timeout(20000) });
     const j = await r.json();
     const ok = (j.models ?? []).filter((m: { name: string; supportedGenerationMethods?: string[] }) =>
       /gemini-[\d.]+-flash$/.test(m.name) && (m.supportedGenerationMethods ?? []).includes("generateContent"))
@@ -108,9 +108,10 @@ async function gemini(historial: { role: string; text: string }[], contexto: str
     body: JSON.stringify({
       system_instruction: { parts: [{ text: SISTEMA }] },
       contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 700 },
+      generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
     }),
-  });
+    signal: AbortSignal.timeout(60000),
+  }).catch((e) => new Response(JSON.stringify({ error: String(e) })));
   const j = await r.json();
   const txt = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
   if (!txt) console.log("gemini sin respuesta", JSON.stringify(j).slice(0, 500));

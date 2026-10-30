@@ -14,7 +14,7 @@ permissions:
 jobs:
   probar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
@@ -33,7 +33,7 @@ jobs:
           curl -s localhost:8000/ > out/estado.txt
           IFS='|' read -ra QS <<< "$PREGUNTAS"
           for q in "${QS[@]}"; do
-            r=$(curl -s -G localhost:8000/probar --data-urlencode "clave=prueba123" --data-urlencode "chat=1" --data-urlencode "q=$q")
+            r=$(curl -s -m 90 -G localhost:8000/probar --data-urlencode "clave=prueba123" --data-urlencode "chat=1" --data-urlencode "q=$q")
             printf '👤 %s\n🤖 %s\n\n' "$q" "$r" >> out/respuestas.txt
           done
           cp server.log out/ || true
