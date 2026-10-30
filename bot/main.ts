@@ -17,6 +17,13 @@ const WHAPI = "https://gate.whapi.cloud";
 const PRODUCTOS_URL = "https://raw.githubusercontent.com/negobazar/negobazar-canal/bot-datos/productos.json";
 const kv = await Deno.openKv();
 
+// Limpieza unica: saca las pausas que quedaron por la falla de la IA del 30/10.
+if (!(await kv.get(["limpieza", "pausas-2026-10-30"])).value) {
+  for await (const x of kv.list({ prefix: ["pausa"] })) await kv.delete(x.key);
+  for await (const x of kv.list({ prefix: ["hist"] })) await kv.delete(x.key);
+  await kv.set(["limpieza", "pausas-2026-10-30"], 1);
+}
+
 type Prod = { c: string; n: string; m: string; p: number; s: number; min: number; mul: number; cat: string; sub: string; et: string; img: string };
 let cache: { t: number; data: Prod[] } = { t: 0, data: [] };
 
