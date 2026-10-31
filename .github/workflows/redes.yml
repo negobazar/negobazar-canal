@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   FB_PAGE_ID: "100119982130545"      # NegoBazar
@@ -31,7 +31,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install requests
-      - env:
+      - name: Decidir que toca (y no repetir)
+        id: que
+        env:
+          SCHED: ${{ github.event.schedule }}
+          MOM_IN: ${{ inputs.momento }}
+        run: |
+          python3 - <<'PY' >> $GITHUB_OUTPUT
+          import os, datetime, subprocess
+          plan = {"7 13 * * *": ("manana", 13, 7), "33 15 * * *": ("mediodia", 15, 33), "7 20 * * *": ("tarde", 20, 7),
+                  "3 21 * * *": ("reel", 21, 3), "33 23 * * *": ("noche", 23, 33)}
+          ahora = datetime.datetime.now(datetime.timezone.utc)
+          sched = os.environ.get("SCHED", "")
+          fecha = (ahora - datetime.timedelta(hours=3)).date().isoformat()
+          if sched in plan:
+              mom, hh, mm = plan[sched]
+              previsto = ahora.replace(hour=hh, minute=mm, second=0, microsecond=0)
+              if previsto > ahora:
+                  previsto -= datetime.timedelta(days=1)
+              atraso = (ahora - previsto).total_seconds() / 60
+              fecha = (previsto - datetime.timedelta(hours=3)).date().isoformat()
+              print(f"momento={mom}")
+              print(f"seguir={'si' if atraso <= 90 else 'no'}")
+              print(f"atraso={int(atraso)}")
+          else:
+              print(f"momento={os.environ.get('MOM_IN', '')}")
+              print("seguir=si")
+          print(f"fecha={fecha}")
+          PY
+      - name: Ya publicado?
+        id: hecho
+        if: steps.que.outputs.seguir == 'si'
+        run: |
+          git fetch -q origin redes-estado 2>/dev/null && git show FETCH_HEAD:hechos.txt > hechos.txt 2>/dev/null || touch hechos.txt
+          CLAVE="${{ steps.que.outputs.fecha }} ${{ steps.que.outputs.momento }}"
+          if [ -n "${{ steps.que.outputs.momento }}" ] && grep -qx "$CLAVE" hechos.txt && [ "${{ github.event_name }}" = "schedule" ]; then echo "repetido=si" >> $GITHUB_OUTPUT; echo "Ya se publico $CLAVE"; else echo "repetido=no" >> $GITHUB_OUTPUT; fi
+          echo "Atraso: ${{ steps.que.outputs.atraso }} min"
+      - if: steps.que.outputs.seguir == 'si' && steps.hecho.outputs.repetido == 'no'
+        env:
           META_TOKEN: ${{ secrets.META_TOKEN }}
           REDES_RAMA: ${{ inputs.rama || 'dia' }}
-        run: python tools/redes_publicar.py "${{ inputs.momento }}"
+        run: python tools/redes_publicar.py "${{ steps.que.outputs.momento }}"
+      - name: Anotar como publicado
+        if: steps.que.outputs.seguir == 'si' && steps.hecho.outputs.repetido == 'no' && steps.que.outputs.momento != ''
+        run: |
+          echo "${{ steps.que.outputs.fecha }} ${{ steps.que.outputs.momento }}" >> hechos.txt
+          mkdir e && cp hechos.txt e/ && cd e && git init -q && git config user.name bot && git config user.email bot@x && git add . && git commit -qm h
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:redes-estado
