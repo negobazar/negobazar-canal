@@ -71,7 +71,8 @@ def ig_historia(url):
 
 
 def ig_carrusel(urls, texto):
-    hijos = [api("POST", f"{IG}/media", image_url=u, is_carousel_item="true")["id"] for u in urls]
+    hijos = [api("POST", f"{IG}/media", media_type="VIDEO", video_url=u, is_carousel_item="true")["id"] if u.lower().endswith(".mp4")
+             else api("POST", f"{IG}/media", image_url=u, is_carousel_item="true")["id"] for u in urls]
     for h in hijos:
         esperar_contenedor(h)
     return ig_publicar(api("POST", f"{IG}/media", media_type="CAROUSEL", children=",".join(hijos), caption=texto)["id"])
