@@ -1,0 +1,36 @@
+name: WhatsApp - leer un chat (cifrado)
+on:
+  workflow_dispatch:
+    inputs:
+      hash: {description: "sha256 del nombre del chat en minusculas"}
+      clave: {description: "clave publica RSA en base64 (el resultado sale cifrado)"}
+permissions:
+  contents: write
+jobs:
+  l:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          HASH: ${{ inputs.hash }}
+        run: |
+          python3 - <<'PY' > plano.json
+          import os, json, hashlib, requests, unicodedata
+          H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
+          norm = lambda s: "".join(c for c in unicodedata.normalize("NFD", (s or "").lower().strip()) if unicodedata.category(c) != "Mn")
+          chats = requests.get("https://gate.whapi.cloud/chats", headers=H, params={"count": 500}, timeout=60).json().get("chats", [])
+          hits = [c for c in chats if hashlib.sha256(norm(c.get("name")).encode()).hexdigest() == os.environ["HASH"]]
+          out = {"encontrados": [{"id": c["id"], "name": c.get("name")} for c in hits], "total_chats": len(chats)}
+          for c in hits[:2]:
+              ms = requests.get(f"https://gate.whapi.cloud/messages/list/{c['id']}", headers=H, params={"count": 20}, timeout=60).json().get("messages", [])
+              out[c["id"]] = [{"t": m.get("timestamp"), "yo": m.get("from_me"), "tipo": m.get("type"),
+                               "txt": (m.get("text") or {}).get("body") or (m.get("image") or {}).get("caption") or ""} for m in ms]
+          print(json.dumps(out, ensure_ascii=False))
+          PY
+          echo "${{ inputs.clave }}" | base64 -d > pub.pem
+          openssl rand -out k.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in plano.json -out datos.enc -pass file:k.bin
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.bin -out k.enc
+          mkdir o && cp datos.enc k.enc o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
