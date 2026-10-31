@@ -110,8 +110,8 @@ def main():
             print(i, m["media_type"], m["permalink"], (m.get("caption") or "")[:120].replace("\n", " "))
         return
     if a.tipo == "ultimos":
-        print(json.dumps(api("GET", f"{IG}/media", fields="id,media_type,permalink,timestamp", limit=3), ensure_ascii=False))
-        print(json.dumps(api("GET", f"{PAGE}/posts", _tok=token_pagina(), fields="id,created_time,permalink_url", limit=3), ensure_ascii=False))
+        print(json.dumps(api("GET", f"{IG}/media", fields="id,media_type,permalink,timestamp,caption", limit=10), ensure_ascii=False))
+        print(json.dumps(api("GET", f"{PAGE}/posts", _tok=token_pagina(), fields="id,created_time,permalink_url,message", limit=10), ensure_ascii=False))
         return
     hechos = {}
     if a.solo != "fb" and IG:
