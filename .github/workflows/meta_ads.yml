@@ -1,0 +1,34 @@
+name: Meta - estado de la campaña (cifrado)
+on:
+  workflow_dispatch:
+    inputs:
+      clave: {description: "clave publica RSA en base64"}
+permissions:
+  contents: write
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+        run: |
+          python3 - <<'PY' > plano.json
+          import os, json, requests
+          T = os.environ["META_TOKEN"]; B = "https://graph.facebook.com/v21.0/"
+          g = lambda p, **k: requests.get(B + p, params={"access_token": T, **k}, timeout=60).json()
+          out = {}
+          out["campanas"] = g("act_156383849857349/campaigns", fields="name,status,effective_status,daily_budget,start_time")
+          out["anuncios"] = g("act_156383849857349/ads", fields="name,effective_status,ad_review_feedback,issues_info")
+          out["insights"] = g("act_156383849857349/insights", level="campaign", date_preset="maximum",
+                              fields="campaign_name,spend,impressions,reach,clicks,cpm,actions,cost_per_action_type")
+          out["hoy"] = g("act_156383849857349/insights", level="campaign", date_preset="today", fields="campaign_name,spend,impressions,actions")
+          s = json.dumps(out, ensure_ascii=False)
+          print(s.replace(T, "***"))
+          PY
+          echo "${{ inputs.clave }}" | base64 -d > pub.pem
+          openssl rand -out k.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in plano.json -out datos.enc -pass file:k.bin
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.bin -out k.enc
+          mkdir o && cp datos.enc k.enc o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
