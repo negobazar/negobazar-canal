@@ -1,0 +1,38 @@
+name: WhatsApp - enviar a un chat
+on:
+  workflow_dispatch:
+    inputs:
+      termina: {description: "ultimos digitos del numero del chat"}
+      texto_url: {description: "URL publica de un .txt con el mensaje", default: ""}
+      imagenes: {description: "URLs publicas de imagenes separadas por coma", default: ""}
+permissions:
+  contents: write
+jobs:
+  e:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          TERMINA: ${{ inputs.termina }}
+          TEXTO_URL: ${{ inputs.texto_url }}
+          IMAGENES: ${{ inputs.imagenes }}
+        run: |
+          python3 - <<'PY' > r.txt
+          import os, time, requests
+          H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
+          chats = requests.get("https://gate.whapi.cloud/chats", headers=H, params={"count": 500}, timeout=60).json().get("chats", [])
+          hits = [c["id"] for c in chats if c["id"].endswith("@s.whatsapp.net") and c["id"].split("@")[0].endswith(os.environ["TERMINA"])]
+          if len(hits) != 1:
+              print("chats que coinciden:", len(hits)); raise SystemExit
+          to = hits[0]
+          if os.environ["TEXTO_URL"]:
+              body = requests.get(os.environ["TEXTO_URL"], timeout=30).content.decode("utf-8")
+              r = requests.post("https://gate.whapi.cloud/messages/text", headers=H, json={"to": to, "body": body}, timeout=60); print("texto", r.status_code)
+          for u in [x for x in os.environ["IMAGENES"].split(",") if x.strip()]:
+              time.sleep(2)
+              r = requests.post("https://gate.whapi.cloud/messages/image", headers=H, json={"to": to, "media": u.strip()}, timeout=90); print("imagen", r.status_code)
+          PY
+          cat r.txt
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
