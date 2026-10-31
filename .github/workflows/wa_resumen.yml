@@ -1,0 +1,40 @@
+name: WhatsApp - resumen de chats (cifrado)
+on:
+  workflow_dispatch:
+    inputs:
+      clave: {description: "clave publica RSA en base64"}
+permissions:
+  contents: write
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY' > plano.json
+          import os, json, requests
+          H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
+          chats = requests.get("https://gate.whapi.cloud/chats", headers=H, params={"count": 500}, timeout=60).json().get("chats", [])
+          out = []
+          for c in chats:
+              if not c["id"].endswith("@s.whatsapp.net"): continue
+              lm = c.get("last_message") or {}
+              out.append({"id": c["id"][-4:], "ts": c.get("timestamp") or lm.get("timestamp"), "ultimo_yo": lm.get("from_me"),
+                          "txt": ((lm.get("text") or {}).get("body") or "")[:80]})
+          sel = [x for x in out if (x["ts"] or 0) >= 1793300000]
+          for x in sel:
+              ms = requests.get(f"https://gate.whapi.cloud/messages/list/{[c['id'] for c in chats if c['id'].endswith(x['id']+'@s.whatsapp.net')][0]}", headers=H, params={"count": 60}, timeout=60).json().get("messages", [])
+              ms = sorted(ms, key=lambda m: m.get("timestamp", 0))
+              x["primero_ts"] = ms[0]["timestamp"] if ms else None
+              x["primer_txt"] = ((ms[0].get("text") or {}).get("body") or "")[:80] if ms else ""
+              x["n"] = len(ms)
+          print(json.dumps(sel, ensure_ascii=False))
+          PY
+          echo "${{ inputs.clave }}" | base64 -d > pub.pem
+          openssl rand -out k.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in plano.json -out datos.enc -pass file:k.bin
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.bin -out k.enc
+          mkdir o && cp datos.enc k.enc o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
