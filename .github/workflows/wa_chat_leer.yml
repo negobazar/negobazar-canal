@@ -4,6 +4,7 @@ on:
     inputs:
       hash: {description: "sha256 del nombre del chat en minusculas"}
       clave: {description: "clave publica RSA en base64 (el resultado sale cifrado)"}
+      termina: {description: "ultimos digitos del numero (opcional)", default: ""}
 permissions:
   contents: write
 jobs:
@@ -14,15 +15,18 @@ jobs:
       - env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
           HASH: ${{ inputs.hash }}
+          TERMINA: ${{ inputs.termina }}
         run: |
           python3 - <<'PY' > plano.json
           import os, json, hashlib, requests, unicodedata
           H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
           norm = lambda s: "".join(c for c in unicodedata.normalize("NFD", (s or "").lower().strip()) if unicodedata.category(c) != "Mn")
           chats = requests.get("https://gate.whapi.cloud/chats", headers=H, params={"count": 500}, timeout=60).json().get("chats", [])
-          hits = [c for c in chats if hashlib.sha256(norm(c.get("name")).encode()).hexdigest() == os.environ["HASH"]]
+          t = os.environ.get("TERMINA", "")
+          hits = [c for c in chats if hashlib.sha256(norm(c.get("name")).encode()).hexdigest() == os.environ["HASH"]
+                  or (t and c["id"].split("@")[0].endswith(t))]
           out = {"encontrados": [{"id": c["id"], "name": c.get("name")} for c in hits], "total_chats": len(chats),
-                 "todos": [[c["id"], c.get("name") or ""] for c in chats]}
+                 }
           for c in hits[:2]:
               ms = requests.get(f"https://gate.whapi.cloud/messages/list/{c['id']}", headers=H, params={"count": 20}, timeout=60).json().get("messages", [])
               out[c["id"]] = [{"t": m.get("timestamp"), "yo": m.get("from_me"), "tipo": m.get("type"),
