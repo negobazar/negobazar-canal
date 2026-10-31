@@ -1,0 +1,28 @@
+name: Estado de WhatsApp - subir video
+on:
+  workflow_dispatch:
+    inputs:
+      url: {description: "URL publica del video mp4"}
+      texto: {description: "Texto del estado", default: ""}
+permissions:
+  contents: write
+jobs:
+  e:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          URL: ${{ inputs.url }}
+          TEXTO: ${{ inputs.texto }}
+        run: |
+          python3 - <<'PY' > r.txt
+          import os, requests
+          r = requests.post("https://gate.whapi.cloud/stories/send/media", timeout=180,
+                            headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]},
+                            json={"media": os.environ["URL"], "mime_type": "video/mp4", "caption": os.environ["TEXTO"]})
+          print(r.status_code, r.text[:200])
+          PY
+          cat r.txt
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
