@@ -1,0 +1,20 @@
+name: Aviso por WhatsApp a David
+on:
+  repository_dispatch:
+    types: [aviso-davo]
+jobs:
+  a:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          MENSAJE: ${{ github.event.client_payload.mensaje }}
+        run: |
+          python3 - <<'PY'
+          import os, requests
+          r = requests.post("https://gate.whapi.cloud/messages/text", timeout=60,
+                            headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]},
+                            json={"to": "5491168169442@s.whatsapp.net", "body": os.environ["MENSAJE"]})
+          print("envio", r.status_code)
+          PY
