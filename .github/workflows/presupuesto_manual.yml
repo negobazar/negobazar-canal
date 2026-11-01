@@ -1,0 +1,31 @@
+name: WhatsApp - presupuesto manual
+on:
+  workflow_dispatch:
+    inputs:
+      pedido: {description: "pedido.json en base64, cifrado no: solo items y textos"}
+      enviar: {description: "si/no", default: "no"}
+      clave: {description: "clave publica RSA base64 (el PDF sale cifrado)"}
+permissions:
+  contents: write
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with: {deno-version: v2.x}
+      - run: git fetch -q --depth 1 origin bot-datos && git show FETCH_HEAD:productos.json > /tmp/productos.json
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          ENVIAR: ${{ inputs.enviar }}
+        run: |
+          echo "${{ inputs.pedido }}" | base64 -d > /tmp/pedido.json
+          deno run -A tools/presupuesto_manual.ts /tmp/pedido.json /tmp/productos.json > /tmp/r.txt 2>&1 || true
+          cat /tmp/r.txt
+          echo "${{ inputs.clave }}" | base64 -d > pub.pem
+          openssl rand -out k.bin 32
+          tar czf p.tgz -C /tmp r.txt $( [ -f presupuesto.pdf ] && echo) && [ -f presupuesto.pdf ] && tar czf p.tgz presupuesto.pdf -C /tmp r.txt || true
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in p.tgz -out datos.enc -pass file:k.bin
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.bin -out k.enc
+          mkdir o && cp datos.enc k.enc o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
