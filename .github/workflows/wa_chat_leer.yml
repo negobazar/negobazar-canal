@@ -23,14 +23,15 @@ jobs:
           norm = lambda s: "".join(c for c in unicodedata.normalize("NFD", (s or "").lower().strip()) if unicodedata.category(c) != "Mn")
           chats = requests.get("https://gate.whapi.cloud/chats", headers=H, params={"count": 500}, timeout=60).json().get("chats", [])
           t = os.environ.get("TERMINA", "")
-          hits = [c for c in chats if hashlib.sha256(norm(c.get("name")).encode()).hexdigest() == os.environ["HASH"]
+          hits = [c for c in chats if (hashlib.sha256(norm(c.get("name")).encode()).hexdigest() == os.environ["HASH"]
+                  or any(hashlib.sha256(w.encode()).hexdigest() == os.environ["HASH"] for w in norm(c.get("name")).split()))
                   or (t and c["id"].split("@")[0].endswith(t))]
           out = {"encontrados": [{"id": c["id"], "name": c.get("name")} for c in hits], "total_chats": len(chats),
                  }
-          for c in hits[:2]:
+          for c in hits[:4]:
               ms = requests.get(f"https://gate.whapi.cloud/messages/list/{c['id']}", headers=H, params={"count": 20}, timeout=60).json().get("messages", [])
               out[c["id"]] = [{"t": m.get("timestamp"), "yo": m.get("from_me"), "tipo": m.get("type"),
-                               "txt": (m.get("text") or {}).get("body") or (m.get("image") or {}).get("caption") or ""} for m in ms]
+                               "txt": (m.get("text") or {}).get("body") or (m.get("image") or {}).get("caption") or (m.get("document") or {}).get("filename") or ""} for m in ms]
           print(json.dumps(out, ensure_ascii=False))
           PY
           echo "${{ inputs.clave }}" | base64 -d > pub.pem
