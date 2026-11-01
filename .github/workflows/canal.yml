@@ -116,3 +116,62 @@ jobs:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL }}
         run: python publicador.py --agenda dia/agenda.json --desde 18:00 --hasta 22:30
+
+  redes-1:
+    needs: espera-2
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Redes (IG y FB) a horario
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          REDES_RAMA: dia
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/redes_turno.py manana=10:07 mediodia=12:33
+
+  redes-2:
+    needs: redes-1
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Redes (IG y FB) a horario
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          REDES_RAMA: dia
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/redes_turno.py tarde=17:07 reel=18:03
+
+  redes-3:
+    needs: redes-2
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Redes (IG y FB) a horario
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN }}
+          REDES_RAMA: dia
+          GH_TOKEN: ${{ github.token }}
+        run: python tools/redes_turno.py noche=20:33
