@@ -133,6 +133,8 @@ jobs:
         env:
           META_TOKEN: ${{ secrets.META_TOKEN }}
           REDES_RAMA: dia
+          FB_PAGE_ID: "100119982130545"
+          IG_USER_ID: "17841446090928334"
           GH_TOKEN: ${{ github.token }}
         run: python tools/redes_turno.py manana=10:07 mediodia=12:33
 
@@ -153,6 +155,8 @@ jobs:
         env:
           META_TOKEN: ${{ secrets.META_TOKEN }}
           REDES_RAMA: dia
+          FB_PAGE_ID: "100119982130545"
+          IG_USER_ID: "17841446090928334"
           GH_TOKEN: ${{ github.token }}
         run: python tools/redes_turno.py tarde=17:07 reel=18:03
 
@@ -173,5 +177,7 @@ jobs:
         env:
           META_TOKEN: ${{ secrets.META_TOKEN }}
           REDES_RAMA: dia
+          FB_PAGE_ID: "100119982130545"
+          IG_USER_ID: "17841446090928334"
           GH_TOKEN: ${{ github.token }}
         run: python tools/redes_turno.py noche=20:33
