@@ -1,0 +1,34 @@
+name: WhatsApp - invitar al canal a los que ya escribieron
+on:
+  workflow_dispatch:
+    inputs:
+      modo: {description: "plan | enviar", default: "plan"}
+      clave: {description: "(plan) clave publica RSA en base64", default: ""}
+      hashes: {description: "(enviar) hashes aprobados, separados por coma", default: ""}
+permissions:
+  contents: write
+concurrency:
+  group: canal-invitar
+jobs:
+  i:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - run: git fetch -q origin invitaciones-estado && git show FETCH_HEAD:enviados.txt > enviados.txt || touch enviados.txt
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: python tools/canal_invitar.py "${{ inputs.modo }}" "${{ inputs.hashes }}"
+      - if: inputs.modo == 'plan'
+        run: |
+          echo "${{ inputs.clave }}" | base64 -d > pub.pem
+          openssl rand -out k.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in plan.json -out datos.enc -pass file:k.bin
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.bin -out k.enc
+          mkdir o && cp datos.enc k.enc o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
+      - if: inputs.modo == 'enviar'
+        run: |
+          mkdir o && cp enviados.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm e
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:invitaciones-estado
