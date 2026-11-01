@@ -1,0 +1,31 @@
+name: WhatsApp - catalogo de productos (prueba)
+on:
+  workflow_dispatch:
+    inputs:
+      productos: {description: "JSON con la lista de productos a crear", default: "[]"}
+permissions:
+  contents: write
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          PRODUCTOS: ${{ inputs.productos }}
+        run: |
+          python3 - <<'PY' > r.txt
+          import os, json, time, requests
+          H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Content-Type": "application/json"}
+          for p in json.loads(os.environ["PRODUCTOS"]):
+              body = {"name": p["name"], "description": p["description"], "price": p.get("price", 0), "currency": "ARS",
+                      "images": [{"url": p["img"]}], "availability": "in stock", "product_retailer_id": p["code"]}
+              if p.get("url"): body["url"] = p["url"]
+              r = requests.post("https://gate.whapi.cloud/business/products", headers=H, json=body, timeout=90)
+              print("crear", p["code"], r.status_code, r.text[:400]); time.sleep(3)
+          r = requests.get("https://gate.whapi.cloud/business/products", headers=H, params={"count": 20}, timeout=60)
+          print("listar", r.status_code, r.text[:3000])
+          PY
+          cat r.txt
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
