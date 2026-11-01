@@ -263,8 +263,29 @@ async function textoSeguimiento(chat: string, s: Seg, n: number): Promise<string
     : `¡Hola${nombre ? " " + nombre : ""}! Cualquier cosa que necesites para tu local, escribime y te armo el pedido a tu medida 🙌`;
 }
 
+// Una sola vez: carga los chats de los últimos 10 días que ya existían antes del seguimiento.
+async function cargarChatsViejos() {
+  if ((await kv.get(["seg_backfill", "v1"])).value) return;
+  await kv.set(["seg_backfill", "v1"], new Date().toISOString());
+  const Hh = { Authorization: `Bearer ${env("WHAPI_TOKEN")}` };
+  const r = await fetch(`${WHAPI}/chats?count=500`, { headers: Hh }).then((x) => x.json()).catch(() => ({}));
+  const limite = Date.now() / 1000 - 10 * 86400;
+  for (const c of (r.chats ?? []) as { id: string; timestamp?: number; name?: string }[]) {
+    if (!c.id.endsWith("@s.whatsapp.net") || (c.timestamp ?? 0) < limite) continue;
+    if ((await kv.get(["seg", c.id])).value) continue;
+    const ms = await fetch(`${WHAPI}/messages/list/${c.id}?count=40`, { headers: Hh }).then((x) => x.json()).catch(() => ({}));
+    let ult_cliente = 0, ult_nos = 0, nombre = "";
+    for (const m of (ms.messages ?? []) as { from_me?: boolean; timestamp?: number; from_name?: string }[]) {
+      const t = (m.timestamp ?? 0) * 1000;
+      if (m.from_me) ult_nos = Math.max(ult_nos, t); else { ult_cliente = Math.max(ult_cliente, t); nombre = nombre || m.from_name || ""; }
+    }
+    if (ult_cliente) await kv.set(["seg", c.id], { ult_cliente, ult_nos, nombre }, { expireIn: 40 * 24 * H });
+  }
+}
+
 async function correrSeguimiento() {
   if (env("MODO", "prueba") !== "activo") return { saltado: "modo prueba" };
+  await cargarChatsViejos().catch((e) => console.log("backfill", e));
   const ahora = Date.now();
   const excluir = new Set([env("AVISO_CHAT"), ...env("PERMITIDOS").split(",").map((x) => x.trim() + "@s.whatsapp.net")]);
   const hechos: string[] = [];
