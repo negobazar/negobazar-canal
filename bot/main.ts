@@ -392,6 +392,26 @@ if (!(await kv.get(["prueba_envio", "2026-10-30-pago"])).value && env("AVISO_CHA
 
 // Envio unico: combos armados de $750k a Davo (11 6816-9442), por lotes en cada /diag (reanudable).
 const COMBOS_KEY = ["combos_envio", "2026-10-30c"];
+// Pedido de David (01/11): presupuesto armado a mano para Alan (CABA, vende online). Se manda una sola vez.
+async function presupuestoAlan() {
+  const clave = ["oneshot", "alan-2026-11-01"];
+  const r = await kv.atomic().check({ key: clave, versionstamp: null }).set(clave, "enviando").commit();
+  if (!r.ok) return (await kv.get(clave)).value;
+  const chat = "5491133554575@s.whatsapp.net";
+  const txt = "¡Hola Alan! Me dijiste que eras de CABA, te envío el presupuesto del surtido 📄\n\n" +
+    "Quedo atento a los datos para confirmar el pedido: *nombre y apellido, DNI o CUIT y dirección de entrega*. 🙌";
+  await enviar(chat, txt);
+  await new Promise((ok) => setTimeout(ok, 2500));
+  const items = [["6073", 144], ["5838", 8], ["9090", 12], ["4727", 60], ["2501", 120], ["9415", 12], ["8234", 18], ["5236", 4], ["1910", 24]]
+    .map(([c, q]) => ({ c, q }));
+  await enviarPresupuesto(chat, "Alan", { items, nombre: "Alan", zona: "CABA", localidad: "CABA", negocio: "Tienda online", pago: "", iva: false });
+  const h = ((await kv.get<{ role: string; text: string }[]>(["hist", chat])).value ?? []);
+  await kv.set(["hist", chat], [...h, { role: "bot", text: txt + "\n[Se le mandó el presupuesto en PDF: 144 compoteras 6073, 8 herméticos 5838, 12 pavas 9090, 60 trapos 4727, 120 esponjas 2501, 12 pelapapas 9415, 18 jarras 8234, 4 sets utensilios 5236, 24 cuchillos 1910. Total aprox $752.506 sin IVA]" }].slice(-12), { expireIn: 7 * 86400000 });
+  await marcarSeg(chat, { presupuesto: Date.now() });
+  await kv.set(clave, "enviado " + new Date().toISOString());
+  return "enviado ahora";
+}
+
 async function combosLote(max = 12) {
   const est = ((await kv.get<{ i: number; r: string[] }>(COMBOS_KEY)).value) ?? { i: 0, r: [] };
   const H = { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" };
@@ -434,9 +454,10 @@ Deno.serve(async (req) => {
     const e = (await kv.get(["ultimo_error"])).value;
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
-      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-11-01-seg", ultimo_error: e,
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-11-01-alan", ultimo_error: e,
       prueba_envio: (await kv.get(["prueba_envio", "2026-10-30-pago"])).value,
       combos: await combosLote().catch((e) => "ERROR " + String(e)),
+      alan: await presupuestoAlan().catch((e) => "ERROR " + String(e)),
       seguimiento: { en_seguimiento: (await Array.fromAsync(kv.list({ prefix: ["seg"] }))).length,
         ultimos: ((((await kv.get<string[]>(["seg_log"])).value) ?? []).slice(0, 5)).map((x) => x.split("|").slice(0, 2).join(" toque ")) },
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
