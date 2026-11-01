@@ -19,7 +19,7 @@ jobs:
           H = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Content-Type": "application/json"}
           for p in json.loads(os.environ["PRODUCTOS"]):
               body = {"name": p["name"], "description": p["description"], "price": p.get("price", 0), "currency": "ARS",
-                      "images": [{"url": p["img"]}], "availability": "in stock", "product_retailer_id": p["code"]}
+                      "images": [p["img"]], "availability": "in stock", "product_retailer_id": p["code"]}
               if p.get("url"): body["url"] = p["url"]
               r = requests.post("https://gate.whapi.cloud/business/products", headers=H, json=body, timeout=90)
               print("crear", p["code"], r.status_code, r.text[:400]); time.sleep(3)
