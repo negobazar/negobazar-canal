@@ -38,7 +38,7 @@ jobs:
           res = {
             "http": {k: open(f"out/{k}_http.txt").read() for k in ("avatars","voices","cuota")},
             "error_avatars": av.get("error"),
-            "talking_photos": [{"id": t.get("talking_photo_id"), "nombre": t.get("talking_photo_name")} for t in d.get("talking_photos", [])],
+            "talking_photos": [{"id": t.get("talking_photo_id"), "nombre": t.get("talking_photo_name"), "img": t.get("preview_image_url")} for t in d.get("talking_photos", [])],
             "avatars": [{"id": a.get("avatar_id"), "nombre": a.get("avatar_name"), "tipo": a.get("type")} for a in d.get("avatars", [])],
             "voces_es": [{"id": v.get("voice_id"), "nombre": v.get("name"), "idioma": v.get("language"), "genero": v.get("gender")}
                          for v in ((vo.get("data") or {}).get("voices") or []) if "span" in str(v.get("language","")).lower() or "es" == str(v.get("language","")).lower()[:2]],
