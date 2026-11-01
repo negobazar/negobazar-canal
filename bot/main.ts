@@ -326,7 +326,8 @@ async function resumenSeguimiento() {
 
 try {
   Deno.cron("seguimiento clientes", "*/30 13-21 * * *", () => correrSeguimiento().then(() => {}));   // 10 a 18:59 hs ARG
-  Deno.cron("resumen seguimiento", "45 12 * * *", () => resumenSeguimiento());                        // 9:45 hs ARG
+  // Resumen diario apagado a pedido de David (activarlo cuando haya muchos seguimientos):
+  // Deno.cron("resumen seguimiento", "45 12 * * *", () => resumenSeguimiento());
 } catch (e) { console.log("cron no disponible", e); }
 
 async function webhook(req: Request): Promise<Response> {
