@@ -233,6 +233,81 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
   return resp;
 }
 
+// ---------------- Seguimiento a los que escribieron y no volvieron a responder ----------------
+// Reglas: solo chats donde el cliente escribió primero; el último mensaje fue nuestro (no le debemos respuesta);
+// 1er toque a las 24 h de su último mensaje, 2do toque 3 días después. Nunca más de 2 toques por cliente cada 30 días.
+type Seg = { ult_cliente?: number; ult_nos?: number; nombre?: string; presupuesto?: number; toques?: number[]; respondio_tras_toque?: number };
+const H = 3600000;
+async function marcarSeg(chat: string, cambios: Partial<Seg>, esCliente = false) {
+  const k = ["seg", chat];
+  const v = ((await kv.get<Seg>(k)).value) ?? {};
+  const toques = v.toques ?? [];
+  if (esCliente && toques.length && toques[toques.length - 1] > (v.ult_cliente ?? 0)) cambios.respondio_tras_toque = Date.now();
+  await kv.set(k, { ...v, ...cambios }, { expireIn: 40 * 24 * H });
+}
+
+async function textoSeguimiento(chat: string, s: Seg, n: number): Promise<string> {
+  const nombre = (s.nombre ?? "").split(" ")[0];
+  const hist = (((await kv.get<{ role: string; text: string }[]>(["hist", chat])).value) ?? []).slice(-8);
+  const pedido = n === 1
+    ? "Escribí UN mensaje de seguimiento muy corto (máximo 2 oraciones) para este cliente que consultó y no volvió a responder. Retomá lo que consultó si se ve en la conversación y ofrecé armarle el pedido. Cálido, rioplatense, sin presionar."
+    : "Escribí UN último mensaje de seguimiento muy corto (máximo 2 oraciones). Recordale que podemos armarle el pedido a su medida y que si necesita algo nos escriba cuando quiera. Cálido, rioplatense, sin presionar.";
+  const extra = s.presupuesto ? " Ya se le mandó un presupuesto en PDF: preguntale si lo pudo ver y si quiere confirmarlo." : "";
+  if (hist.length) {
+    const r = await gemini([...hist, { role: "user", text: `[INSTRUCCIÓN INTERNA, no es del cliente] ${pedido}${extra} No inventes precios, descuentos ni promociones. No agregues etiquetas. Respondé solo con el mensaje.${nombre ? " El cliente se llama " + nombre + "." : ""}` }], "");
+    const t = r.replace(/\[[A-Z_]+\]/g, "").trim();
+    if (t && r !== "[FALLA_IA]" && t.length < 400) return t;
+  }
+  return n === 1
+    ? `¡Hola${nombre ? " " + nombre : ""}! 👋 ¿Pudiste ver lo que consultaste? Si querés te ayudo a armar el pedido con lo que necesites.`
+    : `¡Hola${nombre ? " " + nombre : ""}! Cualquier cosa que necesites para tu local, escribime y te armo el pedido a tu medida 🙌`;
+}
+
+async function correrSeguimiento() {
+  if (env("MODO", "prueba") !== "activo") return { saltado: "modo prueba" };
+  const ahora = Date.now();
+  const excluir = new Set([env("AVISO_CHAT"), ...env("PERMITIDOS").split(",").map((x) => x.trim() + "@s.whatsapp.net")]);
+  const hechos: string[] = [];
+  for await (const x of kv.list<Seg>({ prefix: ["seg"] })) {
+    if (hechos.length >= 15) break;
+    const chat = x.key[1] as string; const s = x.value;
+    if (excluir.has(chat) || !s.ult_cliente) continue;
+    if (!s.ult_nos || s.ult_nos < s.ult_cliente) continue;            // le debemos respuesta: eso no es seguimiento
+    if ((await kv.get(["pausa", chat])).value) continue;              // lo está atendiendo una persona
+    const toques = (s.toques ?? []).filter((t) => t > ahora - 30 * 24 * H);
+    const desde = ahora - s.ult_cliente;
+    let n = 0;
+    if (toques.length === 0 && desde >= 24 * H && desde <= 10 * 24 * H) n = 1;
+    else if (toques.length === 1 && toques[0] > s.ult_cliente && ahora - toques[0] >= 72 * H) n = 2;
+    if (!n) continue;
+    const txt = await textoSeguimiento(chat, s, n);
+    await enviar(chat, txt);
+    await kv.set(x.key, { ...s, toques: [...toques, ahora], ult_nos: ahora }, { expireIn: 40 * 24 * H });
+    const l = ((await kv.get<string[]>(["seg_log"])).value) ?? [];
+    l.unshift(`${new Date().toISOString()}|${n}|${s.nombre ?? ""}|${chat.split("@")[0]}`);
+    await kv.set(["seg_log"], l.slice(0, 300));
+    hechos.push(chat);
+    await new Promise((ok) => setTimeout(ok, 8000));
+  }
+  return { enviados: hechos.length };
+}
+
+async function resumenSeguimiento() {
+  const aviso = env("AVISO_CHAT"); if (!aviso) return;
+  const desde = Date.now() - 24 * H;
+  const l = (((await kv.get<string[]>(["seg_log"])).value) ?? []).map((x) => x.split("|")).filter((x) => Date.parse(x[0]) >= desde);
+  const resp: string[] = [];
+  for await (const x of kv.list<Seg>({ prefix: ["seg"] })) if ((x.value.respondio_tras_toque ?? 0) >= desde) resp.push(`${x.value.nombre || ""} wa.me/${String(x.key[1]).split("@")[0]}`);
+  if (!l.length && !resp.length) return;
+  const lineas = l.map((x) => `• ${x[2] || "(sin nombre)"} wa.me/${x[3]} — toque ${x[1]}`).join("\n");
+  await enviar(aviso, `📋 *Seguimiento de ayer*\nSe le escribió a ${l.length} cliente(s) que habían consultado y no volvieron:\n${lineas || "—"}\n\n✅ Respondieron después del seguimiento: ${resp.length}\n${resp.join("\n")}`);
+}
+
+try {
+  Deno.cron("seguimiento clientes", "*/30 13-21 * * *", () => correrSeguimiento().then(() => {}));   // 10 a 18:59 hs ARG
+  Deno.cron("resumen seguimiento", "45 12 * * *", () => resumenSeguimiento());                        // 9:45 hs ARG
+} catch (e) { console.log("cron no disponible", e); }
+
 async function webhook(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
   const log = async (m: Record<string, unknown>, que: string) => {
@@ -255,6 +330,7 @@ async function webhook(req: Request): Promise<Response> {
       continue;
     }
     if (m.from_me) {
+      await marcarSeg(chat, { ult_nos: Date.now() });
       // Si no lo mandó el bot, es una persona del equipo: el bot se calla en ese chat.
       const fueBot = (await kv.get(["enviado", m.id])).value || m.source === "api";
       if (!fueBot) await kv.set(["pausa", chat], 1, { expireIn: Number(env("PAUSA_HORAS", "12")) * 3600000 });
@@ -262,6 +338,7 @@ async function webhook(req: Request): Promise<Response> {
     }
     if ((await kv.get(["visto", m.id])).value) continue;
     await kv.set(["visto", m.id], 1, { expireIn: 86400000 });
+    await marcarSeg(chat, { ult_cliente: Date.now(), nombre: m.from_name ?? "" }, true);
     const numero = chat.split("@")[0];
     if (env("MODO", "prueba") !== "activo" && !env("PERMITIDOS").split(",").map((x) => x.trim()).includes(numero)) continue;
     if ((await kv.get(["pausa", chat])).value) { await log(m, "chat en pausa"); continue; }
@@ -276,7 +353,7 @@ async function webhook(req: Request): Promise<Response> {
       await log(m, "respondido " + JSON.stringify(r ?? "").slice(0, 80));
       if (catalogos.has(chat)) { catalogos.delete(chat); const rc = await enviarCatalogo(chat); await log(m, "catalogo " + JSON.stringify(rc).slice(0, 80)); }
       const ped = pendientes.get(chat);
-      if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); }
+      if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); await marcarSeg(chat, { presupuesto: Date.now() }); }
     } catch (e) {
       await log(m, "ERROR " + String(e).slice(0, 200));
     }
@@ -335,9 +412,11 @@ Deno.serve(async (req) => {
     const e = (await kv.get(["ultimo_error"])).value;
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
-      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-10-30d", ultimo_error: e,
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-11-01-seg", ultimo_error: e,
       prueba_envio: (await kv.get(["prueba_envio", "2026-10-30-pago"])).value,
       combos: await combosLote().catch((e) => "ERROR " + String(e)),
+      seguimiento: { en_seguimiento: (await Array.fromAsync(kv.list({ prefix: ["seg"] }))).length,
+        ultimos: ((((await kv.get<string[]>(["seg_log"])).value) ?? []).slice(0, 5)).map((x) => x.split("|").slice(0, 2).join(" toque ")) },
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
       whapi: await (async () => { try {
         const h = await fetch(`${WHAPI}/health?wakeup=false`, { headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}` } });
