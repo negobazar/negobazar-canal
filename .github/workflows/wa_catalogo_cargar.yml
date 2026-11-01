@@ -1,0 +1,23 @@
+name: WhatsApp - cargar catalogo por lineas
+on:
+  workflow_dispatch:
+    inputs:
+      lista: {description: "Archivo con los productos", default: "catalogo_wa/hudson.json"}
+permissions:
+  contents: write
+concurrency: {group: wa-catalogo, cancel-in-progress: false}
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - run: git fetch -q --depth 1 origin catalogo-wa-estado && git show FETCH_HEAD:estado.json > estado.json || true
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: python tools/catalogo_wa.py "${{ inputs.lista }}" estado.json
+      - if: always()
+        run: |
+          mkdir o && cp estado.json log.txt o/ 2>/dev/null; cd o && git init -q -b catalogo-wa-estado && git config user.name b && git config user.email b@x && git add . && git commit -qm estado
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} catalogo-wa-estado
