@@ -75,8 +75,9 @@ Reglas:
 - Nunca inventes productos, precios, descuentos ni promociones. Los precios son SIN IVA y se confirman al tomar el pedido.
 - Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link, y aclarale una vez que los precios son *sin IVA*. Si está sin stock, decilo y ofrecé alternativas.
 - Recordá el mínimo de compra ($750.000, combinando rubros) cuando sea útil, sin repetirlo en cada mensaje.
-- PRIMER CONTACTO (muy importante): cuando alguien escribe por primera vez con un mensaje genérico ("hola", "quiero más información", "info", "precios?", viene de un anuncio), NO mandes el catálogo todavía. Saludá con su nombre, contale en una línea qué es Negobazar (mayorista de bazar, cocina, hogar, limpieza y textil para comercios y revendedores) y hacele UNA pregunta para conocerlo, por ejemplo: "¿Tenés un local, vendés online o estás arrancando?". Tu objetivo en los primeros mensajes es averiguar: qué tipo de negocio tiene o si está empezando, de qué zona es y qué productos o rubros le interesan.
-- CATÁLOGO: mandalo recién cuando ya sabés al menos qué tipo de negocio tiene y qué rubros le interesan, o cuando el cliente lo pide explícitamente con palabras como "catálogo", "lista de precios" o "mandame todo" (si lo pide así, mandalo aunque no sepas nada, y seguí preguntando después). Antes del catálogo, si te dijo qué busca, mostrale 2 o 3 productos de ese rubro. Para mandarlo respondé algo corto tipo "¡Te paso nuestro catálogo completo en PDF! 📒 Tiene fotos, códigos y precios mayoristas." y agregá la etiqueta [CATALOGO] al final. El PDF se manda solo. Después ofrecé ayudarlo a armar el pedido. Si ya se lo mandaste en esta conversación, no lo vuelvas a mandar salvo que lo pida de nuevo.
+- OBJETIVO: tu meta es CERRAR LA VENTA, no repartir catálogos. Si mandás el catálogo de entrada, el cliente se lo lleva y no vuelve a hablar. Primero conocelo y armale una propuesta.
+- PRIMER CONTACTO: cuando alguien escribe por primera vez ("hola", "quiero más información", "info", "precios?", viene de un anuncio), saludá con su nombre, contale en una línea qué es Negobazar (mayorista de bazar, cocina, hogar, limpieza y textil para comercios y revendedores) y hacele UNA pregunta para conocerlo, por ejemplo "¿Tenés un local, vendés online o estás arrancando?". En los primeros mensajes averiguá, de a una pregunta: qué tipo de negocio tiene o si está empezando, de qué zona es y qué productos o rubros le interesan.
+- CATÁLOGO: NO lo mandes al toque, aunque lo pida. Si lo pide, decile que sí, que se lo pasás, pero antes hacele una o dos preguntas para ayudarlo mejor (ej: "¡Dale! Así te recomiendo lo que más le sirve a tu negocio: ¿qué tenés, un local, vendés online…? ¿Qué rubros te interesan?"). Mientras tanto mostrale 2 o 3 productos del rubro que busca, con precio y link, y proponé armarle un pedido a su medida. Mandá el catálogo recién cuando ya sabés qué negocio tiene y qué le interesa, o si el cliente insiste por segunda vez o no quiere contestar. Para mandarlo respondé algo corto tipo "¡Te paso nuestro catálogo completo en PDF! 📒" y agregá la etiqueta [CATALOGO] al final (el PDF se manda solo). Junto con el catálogo, recomendale 2 o 3 productos puntuales según lo que te contó y ofrecé armarle el pedido. Si ya se lo mandaste en esta conversación, no lo vuelvas a mandar salvo que lo pida de nuevo.
 - CIERRE DE PEDIDO: cuando el cliente quiere hacer o cerrar el pedido:
   1) Confirmá la lista final de productos (código y cantidad), respetando el mínimo y el múltiplo de cada producto.
   2) Pedí los datos que falten, de a uno o dos por mensaje: nombre y apellido o razón social; CUIT o DNI; dirección de entrega con localidad; mail (opcional); forma de pago según su zona. El teléfono ya lo tenemos.
@@ -221,13 +222,16 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
   }
   if (resp.includes("[CATALOGO]")) {
     // Freno: en los primeros mensajes solo se manda si el cliente lo pidio explicitamente.
-    const pidio = /cat[aá]logo|lista( de)? precio|mand[aá]me todo|todos los productos|pdf/i.test(texto);
-    const msgsCliente = hist.filter((h) => h.role === "user").length;
-    if (pidio || msgsCliente >= 3) catalogos.add(chat);
+    const pide = (t: string) => /cat[aá]logo|lista( de)? precio|mand[aá]me todo|todos los productos|pdf/i.test(t);
+    const msgsCliente = hist.filter((h) => h.role === "user");
+    const insistio = msgsCliente.filter((h) => pide(h.text)).length >= 2;
+    if (insistio || msgsCliente.length >= 3) catalogos.add(chat);
     else {
       console.log("catalogo frenado (primer contacto)", chat);
       const sinCat = resp.split("\n").filter((l) => !/cat[aá]logo|pdf/i.test(l)).join("\n").trim();
       resp = sinCat.length > 20 ? sinCat
+        : msgsCliente.length > 1
+        ? "¡Dale, te lo paso! Así te recomiendo lo que más te sirve: ¿qué rubros o productos te interesan más?"
         : `¡Hola${nombre ? " " + nombre.split(" ")[0] : ""}! Gracias por escribir a *Negobazar* 🙌 Somos mayoristas de bazar, cocina, hogar, limpieza y textil.\nContame, ¿tenés un local, vendés online o estás arrancando?`;
     }
     resp = resp.replaceAll("[CATALOGO]", "").trim();
@@ -249,7 +253,7 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
 // ---------------- Seguimiento a los que escribieron y no volvieron a responder ----------------
 // Reglas: solo chats donde el cliente escribió primero; el último mensaje fue nuestro (no le debemos respuesta);
 // 1er toque a las 24 h de su último mensaje, 2do toque 3 días después. Nunca más de 2 toques por cliente cada 30 días.
-type Seg = { ult_cliente?: number; ult_nos?: number; nombre?: string; presupuesto?: number; toques?: number[]; respondio_tras_toque?: number };
+type Seg = { catalogo?: number; ult_cliente?: number; ult_nos?: number; nombre?: string; presupuesto?: number; toques?: number[]; respondio_tras_toque?: number };
 const H = 3600000;
 async function marcarSeg(chat: string, cambios: Partial<Seg>, esCliente = false) {
   const k = ["seg", chat];
@@ -265,12 +269,16 @@ async function textoSeguimiento(chat: string, s: Seg, n: number): Promise<string
   const pedido = n === 1
     ? "Escribí UN mensaje de seguimiento muy corto (máximo 2 oraciones) para este cliente que consultó y no volvió a responder. Retomá lo que consultó si se ve en la conversación y ofrecé armarle el pedido. Cálido, rioplatense, sin presionar."
     : "Escribí UN último mensaje de seguimiento muy corto (máximo 2 oraciones). Recordale que podemos armarle el pedido a su medida y que si necesita algo nos escriba cuando quiera. Cálido, rioplatense, sin presionar.";
-  const extra = s.presupuesto ? " Ya se le mandó un presupuesto en PDF: preguntale si lo pudo ver y si quiere confirmarlo." : "";
+  const catTxt = s.catalogo && n === 1
+    ? " Ayer se le mandó el catálogo en PDF: preguntale si lo pudo ver, si hay algo que le interesó y ofrecé ayudarlo a elegir o a armar el pedido."
+    : "";
+  const extra = catTxt + (s.presupuesto ? " Ya se le mandó un presupuesto en PDF: preguntale si lo pudo ver y si quiere confirmarlo." : "");
   if (hist.length) {
     const r = await gemini([...hist, { role: "user", text: `[INSTRUCCIÓN INTERNA, no es del cliente] ${pedido}${extra} No inventes precios, descuentos ni promociones. No agregues etiquetas. Respondé solo con el mensaje.${nombre ? " El cliente se llama " + nombre + "." : ""}` }], "");
     const t = r.replace(/\[[A-Z_]+\]/g, "").trim();
     if (t && r !== "[FALLA_IA]" && t.length < 400) return t;
   }
+  if (s.catalogo && n === 1) return `¡Hola${nombre ? " " + nombre : ""}! 👋 ¿Pudiste ver el catálogo? ¿Hay algo que te haya interesado? Si querés te ayudo a elegir y te armo el pedido.`;
   return n === 1
     ? `¡Hola${nombre ? " " + nombre : ""}! 👋 ¿Pudiste ver lo que consultaste? Si querés te ayudo a armar el pedido con lo que necesites.`
     : `¡Hola${nombre ? " " + nombre : ""}! Cualquier cosa que necesites para tu local, escribime y te armo el pedido a tu medida 🙌`;
@@ -386,7 +394,7 @@ async function webhook(req: Request): Promise<Response> {
       const resp = await responder(chat, texto, m.from_name ?? "");
       const r = await enviar(chat, resp);
       await log(m, "respondido " + JSON.stringify(r ?? "").slice(0, 80));
-      if (catalogos.has(chat)) { catalogos.delete(chat); const rc = await enviarCatalogo(chat); await log(m, "catalogo " + JSON.stringify(rc).slice(0, 80)); }
+      if (catalogos.has(chat)) { catalogos.delete(chat); const rc = await enviarCatalogo(chat); await marcarSeg(chat, { catalogo: Date.now() }); await log(m, "catalogo " + JSON.stringify(rc).slice(0, 80)); }
       const ped = pendientes.get(chat);
       if (ped) { pendientes.delete(chat); await enviarPresupuesto(chat, m.from_name ?? "", ped); await marcarSeg(chat, { presupuesto: Date.now() }); }
     } catch (e) {
