@@ -75,7 +75,8 @@ Reglas:
 - Nunca inventes productos, precios, descuentos ni promociones. Los precios son SIN IVA y se confirman al tomar el pedido.
 - Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link, y aclarale una vez que los precios son *sin IVA*. Si está sin stock, decilo y ofrecé alternativas.
 - Recordá el mínimo de compra ($750.000, combinando rubros) cuando sea útil, sin repetirlo en cada mensaje.
-- CATÁLOGO: si el cliente pide el catálogo, la lista de precios, "qué productos tienen" en general o "mandame todo", respondé algo corto tipo "¡Te mando nuestro catálogo completo en PDF! 📒 Tiene fotos, códigos y precios mayoristas (sin IVA)." y agregá la etiqueta [CATALOGO] al final. El PDF se manda solo. Después ofrecé ayudarlo a armar el pedido o buscarle algún producto puntual. Si ya se lo mandaste en esta conversación, no lo vuelvas a mandar salvo que lo pida de nuevo.
+- PRIMER CONTACTO (muy importante): cuando alguien escribe por primera vez con un mensaje genérico ("hola", "quiero más información", "info", "precios?", viene de un anuncio), NO mandes el catálogo todavía. Saludá con su nombre, contale en una línea qué es Negobazar (mayorista de bazar, cocina, hogar, limpieza y textil para comercios y revendedores) y hacele UNA pregunta para conocerlo, por ejemplo: "¿Tenés un local, vendés online o estás arrancando?". Tu objetivo en los primeros mensajes es averiguar: qué tipo de negocio tiene o si está empezando, de qué zona es y qué productos o rubros le interesan.
+- CATÁLOGO: mandalo recién cuando ya sabés al menos qué tipo de negocio tiene y qué rubros le interesan, o cuando el cliente lo pide explícitamente con palabras como "catálogo", "lista de precios" o "mandame todo" (si lo pide así, mandalo aunque no sepas nada, y seguí preguntando después). Antes del catálogo, si te dijo qué busca, mostrale 2 o 3 productos de ese rubro. Para mandarlo respondé algo corto tipo "¡Te paso nuestro catálogo completo en PDF! 📒 Tiene fotos, códigos y precios mayoristas." y agregá la etiqueta [CATALOGO] al final. El PDF se manda solo. Después ofrecé ayudarlo a armar el pedido. Si ya se lo mandaste en esta conversación, no lo vuelvas a mandar salvo que lo pida de nuevo.
 - CIERRE DE PEDIDO: cuando el cliente quiere hacer o cerrar el pedido:
   1) Confirmá la lista final de productos (código y cantidad), respetando el mínimo y el múltiplo de cada producto.
   2) Pedí los datos que falten, de a uno o dos por mensaje: nombre y apellido o razón social; CUIT o DNI; dirección de entrega con localidad; mail (opcional); forma de pago según su zona. El teléfono ya lo tenemos.
@@ -218,7 +219,19 @@ async function responder(chat: string, texto: string, nombre: string): Promise<s
     try { pedido = JSON.parse(mp[1].trim().replace(/^```json|```$/g, "")); } catch (_) { pedido = null; }
     resp = resp.replace(mp[0], "").trim();
   }
-  if (resp.includes("[CATALOGO]")) { catalogos.add(chat); resp = resp.replaceAll("[CATALOGO]", "").trim(); }
+  if (resp.includes("[CATALOGO]")) {
+    // Freno: en los primeros mensajes solo se manda si el cliente lo pidio explicitamente.
+    const pidio = /cat[aá]logo|lista( de)? precio|mand[aá]me todo|todos los productos|pdf/i.test(texto);
+    const msgsCliente = hist.filter((h) => h.role === "user").length;
+    if (pidio || msgsCliente >= 3) catalogos.add(chat);
+    else {
+      console.log("catalogo frenado (primer contacto)", chat);
+      const sinCat = resp.split("\n").filter((l) => !/cat[aá]logo|pdf/i.test(l)).join("\n").trim();
+      resp = sinCat.length > 20 ? sinCat
+        : `¡Hola${nombre ? " " + nombre.split(" ")[0] : ""}! Gracias por escribir a *Negobazar* 🙌 Somos mayoristas de bazar, cocina, hogar, limpieza y textil.\nContame, ¿tenés un local, vendés online o estás arrancando?`;
+    }
+    resp = resp.replaceAll("[CATALOGO]", "").trim();
+  }
   const derivar = resp.includes("[DERIVAR]") || !!pedido;
   resp = resp.replaceAll("[DERIVAR]", "").trim();
   if (pedido) pendientes.set(chat, pedido);
