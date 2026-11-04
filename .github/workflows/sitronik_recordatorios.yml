@@ -26,6 +26,6 @@ jobs:
           msg = "🏠 *Sitronik · para mañana*\n\n" + txt
           for n in [x.strip() for x in os.environ["NUMEROS"].split(",") if x.strip()]:
               req = urllib.request.Request("https://gate.whapi.cloud/messages/text", data=json.dumps({"to": n, "body": msg}).encode(),
-                    headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Content-Type": "application/json"})
+                    headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Content-Type": "application/json", "User-Agent": "Mozilla/5.0 Sitronik-recordatorios"})
               print(n[-4:], urllib.request.urlopen(req, timeout=30).status)
           PY
