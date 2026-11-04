@@ -1,0 +1,15 @@
+name: Bot - responder chats pendientes
+on:
+  workflow_dispatch:
+    inputs:
+      enviar: { default: '0' }
+      horas: { default: '30' }
+permissions: { contents: read }
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: curl -s -m 60 -o /dev/null -w "bot HTTP %{http_code}\n" https://bot-negobazar.negobazar.deno.net/diag
+      - env: { WT: "${{ secrets.WHAPI_TOKEN }}", ENVIAR: "${{ inputs.enviar }}", HORAS: "${{ inputs.horas }}" }
+        run: python3 tools/pendientes.py
