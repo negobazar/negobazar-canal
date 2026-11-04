@@ -1,0 +1,31 @@
+name: Sitronik - recordatorio del dia siguiente
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 19:00 Argentina
+  workflow_dispatch:
+    inputs:
+      fecha: { description: "fecha a recordar (YYYY-MM-DD), vacio = mañana", default: "" }
+permissions: { contents: read }
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enviar
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          NUMEROS: ${{ secrets.RECORDATORIO_NUMEROS }}
+          FECHA: ${{ github.event.inputs.fecha }}
+        run: |
+          python3 - <<'PY'
+          import json, os, datetime, urllib.request
+          hoy = (datetime.datetime.utcnow() - datetime.timedelta(hours=3)).date()
+          f = os.environ.get("FECHA") or str(hoy + datetime.timedelta(days=1))
+          txt = json.load(open("sitronik/recordatorios.json")).get(f)
+          if not txt: print("nada para", f); raise SystemExit
+          msg = "🏠 *Sitronik · para mañana*\n\n" + txt
+          for n in [x.strip() for x in os.environ["NUMEROS"].split(",") if x.strip()]:
+              req = urllib.request.Request("https://gate.whapi.cloud/messages/text", data=json.dumps({"to": n, "body": msg}).encode(),
+                    headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Content-Type": "application/json"})
+              print(n[-4:], urllib.request.urlopen(req, timeout=30).status)
+          PY
