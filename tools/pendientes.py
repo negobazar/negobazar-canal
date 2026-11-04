@@ -19,6 +19,7 @@ for c in chats:
     textos = [(m.get("text") or {}).get("body") or (m.get("image") or {}).get("caption") or "" for m in seg]
     textos = [t for t in textos if t]
     pend.append((cid, lm.get("from_name") or c.get("name") or "", seg, textos))
+pend = [x for x in pend if not any(e and x[0].startswith("549") and x[0][:-15].endswith(e) for e in os.environ.get("EXCLUIR", "").split(","))]
 print("chats sin responder:", len(pend))
 for cid, nom, seg, textos in pend:
     print(f"- {nom[:20]} ...{cid[-19:-15]} {time.strftime('%d/%m %H:%M', time.gmtime(seg[-1]['timestamp']-10800))} | {' / '.join(textos)[:90]}")
