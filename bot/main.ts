@@ -18,13 +18,6 @@ const WHAPI = "https://gate.whapi.cloud";
 const PRODUCTOS_URL = "https://raw.githubusercontent.com/negobazar/negobazar-canal/bot-datos/productos.json";
 const kv = await Deno.openKv();
 
-// Limpieza unica: saca las pausas que quedaron por la falla de la IA del 30/10.
-if (!(await kv.get(["limpieza", "pausas-2026-10-30"])).value) {
-  for await (const x of kv.list({ prefix: ["pausa"] })) await kv.delete(x.key);
-  for await (const x of kv.list({ prefix: ["hist"] })) await kv.delete(x.key);
-  await kv.set(["limpieza", "pausas-2026-10-30"], 1);
-}
-
 type Prod = { c: string; n: string; m: string; p: number; s: number; min: number; mul: number; cat: string; sub: string; et: string; img: string };
 let cache: { t: number; data: Prod[] } = { t: 0, data: [] };
 
@@ -346,7 +339,7 @@ async function resumenSeguimiento() {
 }
 
 try {
-  Deno.cron("seguimiento clientes", "*/30 13-21 * * *", () => correrSeguimiento().then(() => {}));   // 10 a 18:59 hs ARG
+  Deno.cron("seguimiento clientes", "5 13-21 * * *", () => correrSeguimiento().then(() => {}));   // 10 a 18:59 hs ARG
   // Resumen diario apagado a pedido de David (activarlo cuando haya muchos seguimientos):
   // Deno.cron("resumen seguimiento", "45 12 * * *", () => resumenSeguimiento());
 } catch (e) { console.log("cron no disponible", e); }
@@ -358,11 +351,9 @@ async function webhook(req: Request): Promise<Response> {
     l.unshift({ t: new Date().toISOString(), chat: String(m.chat_id ?? "").split("@")[0].slice(-4), from_me: m.from_me, tipo: m.type, que });
     await kv.set(["log"], l.slice(0, 15));
   };
-  if (!(body?.messages ?? []).length) await log({ type: Object.keys(body ?? {}).join(",") }, "webhook sin mensajes");
   for (const m of body?.messages ?? []) {
     const chat: string = m.chat_id ?? "";
-    await log(m, "recibido");
-    if (!chat.endsWith("@s.whatsapp.net")) continue; // ni grupos, ni canales, ni estados
+    if (!chat.endsWith("@s.whatsapp.net")) continue; // ni grupos, ni canales, ni estados (sin tocar la base)
     const cmd = String(m.text?.body ?? "").trim().toLowerCase();
     // "#bot" (desde el celular de Negobazar, dentro del chat) o "#reiniciar" (desde el cliente):
     // el bot vuelve a atender ese chat y arranca la conversación de cero.
@@ -402,13 +393,6 @@ async function webhook(req: Request): Promise<Response> {
     }
   }
   return new Response("ok");
-}
-
-// Prueba unica de envio despues de pasar Whapi al plan pago.
-if (!(await kv.get(["prueba_envio", "2026-10-30-pago"])).value && env("AVISO_CHAT")) {
-  await kv.set(["prueba_envio", "2026-10-30-pago"], { t: new Date().toISOString(), r: "enviando" });
-  const r = await enviar(env("AVISO_CHAT"), "✅ Bot de Negobazar activo: Whapi en plan pago, ya puede responder a todos los clientes.").catch((e) => String(e));
-  await kv.set(["prueba_envio", "2026-10-30-pago"], { t: new Date().toISOString(), r: JSON.stringify(r).slice(0, 300) });
 }
 
 // Envio unico: combos armados de $750k a Davo (11 6816-9442), por lotes en cada /diag (reanudable).
@@ -455,9 +439,7 @@ Deno.serve(async (req) => {
     const e = (await kv.get(["ultimo_error"])).value;
     const faltan = ["WHAPI_TOKEN", "GEMINI_API_KEY", "MODO", "AVISO_CHAT"].filter((k) => !env(k));
     return Response.json({ modo: env("MODO", "prueba"), faltan, gemini_key_largo: env("GEMINI_API_KEY").length,
-      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-11-01-seg", ultimo_error: e,
-      prueba_envio: (await kv.get(["prueba_envio", "2026-10-30-pago"])).value,
-      combos: await combosLote().catch((e) => "ERROR " + String(e)),
+      gemini_key_empieza: env("GEMINI_API_KEY").slice(0, 4), version: "2026-11-04-liviano", ultimo_error: e,
       seguimiento: { en_seguimiento: (await Array.fromAsync(kv.list({ prefix: ["seg"] }))).length,
         ultimos: ((((await kv.get<string[]>(["seg_log"])).value) ?? []).slice(0, 5)).map((x) => x.split("|").slice(0, 2).join(" toque ")) },
       pausados: (await Array.fromAsync(kv.list({ prefix: ["pausa"] }))).length,
