@@ -34,5 +34,5 @@ let b64 = ""; const CH = 0x8000;
 for (let i = 0; i < pdf.length; i += CH) b64 += String.fromCharCode(...pdf.subarray(i, i + CH));
 const r2 = await fetch("https://gate.whapi.cloud/messages/document", { method: "POST", headers: H, body: JSON.stringify({
   to: ped.chat, media: "data:application/pdf;base64," + btoa(b64), filename: `Presupuesto-Negobazar-${numero}.pdf`,
-  caption: `📄 Presupuesto N° ${numero} — precios sin IVA, productos sujetos a stock.` }) });
+  caption: `📄 Presupuesto N° ${numero} — productos sujetos a stock.` }) });
 console.log("pdf", r2.status, (await r2.text()).slice(0, 120));

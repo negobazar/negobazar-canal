@@ -54,7 +54,7 @@ function buscar(lista: Prod[], texto: string, max = 8): Prod[] {
 function fichas(ps: Prod[]): string {
   if (!ps.length) return "(No se encontraron productos relacionados con la consulta en el catálogo.)";
   return ps.map((p) =>
-    `- Cód. ${p.c} | ${p.n}${p.m ? " | Marca " + p.m : ""} | ${pesos(p.p)} c/u (sin IVA) | ` +
+    `- Cód. ${p.c} | ${p.n}${p.m ? " | Marca " + p.m : ""} | ${pesos(p.p)} c/u | ` +
     `${p.s > 0 ? `stock: ${p.s} unidades` : "SIN STOCK"}${p.mul > 1 ? ` | se vende de a ${p.mul}` : ""}${p.min > 1 ? ` | mínimo ${p.min} u.` : ""}` +
     `${p.et ? " | " + p.et : ""} | link: https://www.negobazar.com.ar/search/?q=${encodeURIComponent(p.c)}`
   ).join("\n");
@@ -65,8 +65,8 @@ Atendés a comerciantes, revendedores y emprendedores. Hablás en español riopl
 Reglas:
 - Respuestas breves: 1 a 5 líneas. Usá *negrita* de WhatsApp para lo importante y como mucho 1 o 2 emojis.
 - Respondé SOLO con la información de abajo y con los productos que te paso. Si no sabés algo (fechas de entrega puntuales, descuentos especiales, cosas que no figuran), decí que lo confirma una persona del equipo y agregá la etiqueta [DERIVAR].
-- Nunca inventes productos, precios, descuentos ni promociones. Los precios son SIN IVA y se confirman al tomar el pedido.
-- Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link, y aclarale una vez que los precios son *sin IVA*. Si está sin stock, decilo y ofrecé alternativas.
+- Nunca inventes productos, precios, descuentos ni promociones. Los precios se confirman al tomar el pedido. NUNCA menciones el IVA (ni "sin IVA" ni "más IVA"); si el cliente pregunta por el IVA o pide factura, decile que eso lo ve un ejecutivo del equipo y agregá [DERIVAR].
+- Si preguntan por un producto, mostrá hasta 4 opciones con nombre, código, precio y link. Si está sin stock, decilo y ofrecé alternativas.
 - Recordá el mínimo de compra ($750.000, combinando rubros) cuando sea útil, sin repetirlo en cada mensaje.
 - OBJETIVO: tu meta es CERRAR LA VENTA, no repartir catálogos. Si mandás el catálogo de entrada, el cliente se lo lleva y no vuelve a hablar. Primero conocelo y armale una propuesta.
 - PRIMER CONTACTO: cuando alguien escribe por primera vez ("hola", "quiero más información", "info", "precios?", viene de un anuncio), saludá con su nombre, contale en una línea qué es Negobazar (mayorista de bazar, cocina, hogar, limpieza y textil para comercios y revendedores) y hacele UNA pregunta para conocerlo, por ejemplo "¿Tenés un local, vendés online o estás arrancando?". En los primeros mensajes averiguá, de a una pregunta: qué tipo de negocio tiene o si está empezando, de qué zona es y qué productos o rubros le interesan.
@@ -74,7 +74,7 @@ Reglas:
 - CIERRE DE PEDIDO: cuando el cliente quiere hacer o cerrar el pedido:
   1) Confirmá la lista final de productos (código y cantidad), respetando el mínimo y el múltiplo de cada producto.
   2) Pedí los datos que falten, de a uno o dos por mensaje: nombre y apellido o razón social; CUIT o DNI; dirección de entrega con localidad; mail (opcional); forma de pago según su zona. El teléfono ya lo tenemos.
-  3) El presupuesto va SIN IVA. Solo si el cliente pide factura o pregunta por el IVA, avisale que se le suma el 21% de IVA y marcá "iva": true.
+  3) No hables del IVA en el presupuesto. Si el cliente pide factura o pregunta por el IVA, decile que eso lo ve un ejecutivo del equipo, agregá [DERIVAR] y dejá "iva": false.
   4) Cuando tengas todo y el cliente confirme, respondé con un mensaje corto diciendo que le mandás el presupuesto (productos sujetos a stock) y que el equipo lo contacta para confirmar, y agregá AL FINAL, sin mostrarlo de otra forma:
   [PEDIDO]{"items":[{"c":"código","q":cantidad}],"nombre":"","documento":"","direccion":"","localidad":"","zona":"CABA|GBA|INTERIOR","email":"","negocio":"","pago":"","iva":false}[/PEDIDO]
 - Si el cliente quiere pagar algo ya presupuestado, coordinar un envío puntual, tiene un reclamo, pide hablar con una persona o está enojado: respondé amable que ya le avisás al equipo y agregá [DERIVAR] al final.
@@ -145,7 +145,7 @@ const CATALOGO_URL = "https://github.com/negobazar/negobazar-canal/releases/down
 async function enviarCatalogo(chat: string) {
   const r = await fetch(`${WHAPI}/messages/document`, {
     method: "POST", headers: { Authorization: `Bearer ${env("WHAPI_TOKEN")}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ to: chat, media: CATALOGO_URL, filename: "Catalogo-Negobazar.pdf", caption: "📒 Catálogo mayorista Negobazar — precios sin IVA, sujetos a stock. Compra mínima $750.000." }),
+    body: JSON.stringify({ to: chat, media: CATALOGO_URL, filename: "Catalogo-Negobazar.pdf", caption: "📒 Catálogo mayorista Negobazar — precios sujetos a stock. Compra mínima $750.000." }),
   });
   const j = await r.json().catch(() => ({}));
   if (j?.message?.id) await kv.set(["enviado", j.message.id], 1, { expireIn: 86400000 });
@@ -408,7 +408,7 @@ async function combosLote(max = 12) {
     const n = k + 1;
     const lin = [`*COMBO ${n}: ${String(c.nombre).toUpperCase()}*`, ""];
     for (const it of c.items) lin.push(`• ${it.q} x ${it.n} (cód. ${it.c}) — ${$(it.p)} c/u = ${$(it.p * it.q)}`);
-    lin.push("", `*TOTAL: ${$(c.total)}* (sin IVA)`, `${c.items.length} productos · fotos a continuación 👇`);
+    lin.push("", `*TOTAL: ${$(c.total)}*`, `${c.items.length} productos · fotos a continuación 👇`);
     msgs.push(["/messages/text", { body: lin.join("\n") }]);
     for (const it of c.items) msgs.push(["/messages/image", { media: it.img, caption: `Combo ${n} · ${it.n}\nCód. ${it.c} · ${it.q} u. · ${$(it.p)} c/u` }]);
   });

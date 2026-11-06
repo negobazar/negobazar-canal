@@ -57,7 +57,7 @@ RECEPCIÓN Y CAMBIOS
 - Cambios y devoluciones: hasta 72 h desde la entrega, producto sin uso y en su empaque original. Si el error fue nuestro o vino fallado, el envío lo cubrimos nosotros.
 
 IMPORTANTE
-- Todos los precios son SIN IVA.
+- NUNCA menciones el IVA por tu cuenta (ni "sin IVA" ni "más IVA"). Si el cliente pregunta por el IVA o pide factura, respondé que eso se lo confirma un ejecutivo del equipo y agregá [DERIVAR].
 - Precios y stock sujetos a cambios: el valor final se confirma al tomar el pedido.
 - Las imágenes son ilustrativas.
 `;
