@@ -14,6 +14,20 @@ on:
         default: "solo_placas"
         type: choice
         options: [solo_placas, prueba, normal]
+      dias_adelante:
+        description: "(prueba) rotar la selección N días para usar otros productos"
+        default: "0"
+      cantidad:
+        description: "(prueba) cuántas placas publicar"
+        default: "1"
+      cada:
+        description: "(prueba) minutos entre placas"
+        default: "5"
+      bienvenida:
+        description: "(prueba) mandar antes el mensaje de bienvenida"
+        default: "no"
+        type: choice
+        options: ["no", "si"]
 
 concurrency:
   group: sitronik-canal
@@ -35,6 +49,7 @@ jobs:
         env:
           META_TOKEN: ${{ secrets.META_TOKEN_SITRONIK }}
           IG_USER_ID: ${{ secrets.SITRONIK_IG_USER_ID }}
+          DIAS_ADELANTE: ${{ inputs.dias_adelante }}
         run: python sitronik/canal/armar_dia.py --salida sitronik_dia
       - uses: actions/upload-artifact@v4
         with:
@@ -46,7 +61,7 @@ jobs:
     needs: armar
     if: inputs.modo == 'prueba'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -60,8 +75,8 @@ jobs:
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
           NOMBRE_CANAL: sitronik
         run: |
-          python3 -c "import json;p='sitronik_dia/agenda.json';a=json.load(open(p));a['items']=a['items'][:1];json.dump(a,open(p,'w'))"
-          python publicador.py --agenda sitronik_dia/agenda.json --desde 00:00 --hasta 23:59 --cada 0.1
+          python3 sitronik/canal/prueba.py sitronik_dia/agenda.json "${{ inputs.cantidad }}" "${{ inputs.bienvenida }}"
+          python publicador.py --agenda sitronik_dia/agenda.json --desde 00:00 --hasta 23:59 --cada "${{ inputs.cada }}"
 
   tramo-1:
     needs: armar

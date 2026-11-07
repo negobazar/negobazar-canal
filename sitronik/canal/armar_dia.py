@@ -209,8 +209,9 @@ def main():
         sys.exit("No pude leer productos de la tienda.")
 
     hoy = datetime.datetime.now(TZ).date()
+    rot = hoy + datetime.timedelta(days=int(os.environ.get("DIAS_ADELANTE", "0") or 0))
     orden = cfg["orden"][:len(cfg["horarios"])]
-    elegidos = elegir(vendidos, nuevos, orden, hoy.toordinal())
+    elegidos = elegir(vendidos, nuevos, orden, rot.toordinal())
     etiquetas = cfg["etiquetas"]
 
     items = []
@@ -234,7 +235,7 @@ def main():
     combos = [p for p in combos if str(p["id"]) not in ya]
     c = cfg.get("combos", {})
     if combos:
-        inicio = hoy.toordinal() * len(c["horarios"])
+        inicio = rot.toordinal() * len(c["horarios"])
         elegidos_c = [combos[(inicio + k) % len(combos)] for k in range(min(len(c["horarios"]), len(combos)))]
         for n, (p, hora) in enumerate(zip(elegidos_c, c["horarios"]), 1):
             foto = os.path.join(args.salida, f"foto_c{n}.jpg")
