@@ -115,6 +115,52 @@ def texto(p, desc):
             f"🛒 Compralo acá 👉 {p['url']}")
 
 
+def leer_ig(cfg, salida):
+    """Posteos de Instagram de las últimas 24 h, para compartirlos en el canal."""
+    token = os.environ.get("META_TOKEN", "").strip()
+    ig = os.environ.get("IG_USER_ID", "").strip()
+    horarios = cfg.get("horarios_ig", [])
+    if not token or not ig or not horarios:
+        print("Instagram: sin token o sin IG_USER_ID, no comparto posteos")
+        return []
+    r = requests.get(f"https://graph.facebook.com/v21.0/{ig}/media", timeout=40, params={
+        "access_token": token, "limit": 10,
+        "fields": "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp"})
+    if r.status_code != 200:
+        print("Instagram: error", r.status_code, r.text[:200])
+        return []
+    limite = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=24)
+    items = []
+    for post in r.json().get("data", []):
+        if len(items) >= len(horarios):
+            break
+        cuando = datetime.datetime.strptime(post["timestamp"], "%Y-%m-%dT%H:%M:%S%z")
+        if cuando < limite:
+            continue
+        es_video = post.get("media_type") == "VIDEO"
+        img = post.get("thumbnail_url") if es_video else post.get("media_url")
+        if not img:
+            continue
+        archivo = f"ig_{len(items) + 1}.jpg"
+        try:
+            rr = requests.get(img, headers=UA, timeout=60)
+            rr.raise_for_status()
+            with open(os.path.join(salida, archivo), "wb") as f:
+                f.write(rr.content)
+        except requests.RequestException as e:
+            print("Instagram: no pude bajar la imagen", e)
+            continue
+        cap = re.sub(r"(\s*#\S+)+\s*$", "", post.get("caption") or "").strip()
+        if len(cap) > 450:
+            cap = cap[:450].rsplit(" ", 1)[0] + "…"
+        cierre = "▶️ Mirá el video completo en Instagram 👉 " if es_video else "📸 Miralo en nuestro Instagram 👉 "
+        texto_ig = (cap + "\n\n" if cap else "") + cierre + post["permalink"]
+        items.append({"hora": horarios[len(items)], "tipo": "imagen", "archivo": archivo,
+                      "texto": texto_ig, "ref": "ig-" + post["id"]})
+        print(horarios[len(items) - 1], "instagram", post["permalink"])
+    return items
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--salida", default="sitronik_dia")
@@ -148,6 +194,7 @@ def main():
                       "ref": f"{tipo}-{p['id']}"})
         print(hora, tipo, p["nombre"], pesos(p["transf"]))
 
+    items += leer_ig(cfg, args.salida)
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
         json.dump({"fecha": hoy.isoformat(), "items": items}, f, ensure_ascii=False, indent=1)
 

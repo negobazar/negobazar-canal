@@ -32,6 +32,9 @@ jobs:
           python-version: "3.11"
       - run: pip install requests pillow beautifulsoup4
       - name: Armar placas y agenda del día
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN_SITRONIK }}
+          IG_USER_ID: ${{ secrets.SITRONIK_IG_USER_ID }}
         run: python sitronik/canal/armar_dia.py --salida sitronik_dia
       - uses: actions/upload-artifact@v4
         with:
