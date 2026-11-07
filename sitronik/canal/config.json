@@ -1,9 +1,42 @@
 {
- "horarios": ["10:00", "12:30", "15:00", "17:30", "19:30", "21:30"],
- "horarios_ig": ["20:30"],
- "orden": ["vendido", "nuevo", "vendido", "nuevo", "vendido", "nuevo"],
- "etiquetas": {"vendido": "MÁS VENDIDO", "nuevo": "NUEVO INGRESO"},
+ "horarios": [
+  "10:00",
+  "12:30",
+  "15:00",
+  "17:30",
+  "19:30",
+  "21:30"
+ ],
+ "horarios_ig": [
+  "20:30"
+ ],
+ "orden": [
+  "vendido",
+  "nuevo",
+  "vendido",
+  "nuevo",
+  "vendido",
+  "nuevo"
+ ],
+ "etiquetas": {
+  "vendido": "MÁS VENDIDO",
+  "nuevo": "NUEVO INGRESO"
+ },
  "url_mas_vendidos": "https://tiendasitronik.com.ar/productos/?sort_by=best-selling",
  "url_nuevos": "https://tiendasitronik.com.ar/lo-nuevo-qehlq/",
- "paginas": 3
+ "paginas": 3,
+ "combos": {
+  "url": "https://tiendasitronik.com.ar/combos-de-cocina/",
+  "filtro": "hudson",
+  "paginas": 4,
+  "etiqueta": "COMBO HUDSON",
+  "horarios": [
+   "11:15",
+   "13:45",
+   "16:15",
+   "18:45",
+   "20:00",
+   "22:15"
+  ]
+ }
 }

@@ -90,6 +90,40 @@ def leer_listado(url, paginas):
     return productos
 
 
+def fondo_realista(url):
+    """True si la foto tiene ambiente (no fondo blanco de estudio): mira el borde de la imagen."""
+    from io import BytesIO
+    from PIL import Image
+    try:
+        r = requests.get(url.replace("-1024-1024", "-480-0"), headers=UA, timeout=40)
+        r.raise_for_status()
+        im = Image.open(BytesIO(r.content)).convert("L").resize((120, 120))
+    except Exception as e:  # noqa: BLE001
+        print("No pude revisar la foto", url, e)
+        return False
+    px = im.load()
+    borde = [px[x, y] for x in range(120) for y in (0, 1, 2, 117, 118, 119)]
+    borde += [px[x, y] for y in range(120) for x in (0, 1, 2, 117, 118, 119)]
+    claros = sum(1 for v in borde if v > 232) / len(borde)
+    return claros < 0.45
+
+
+def combos_hudson(cfg):
+    c = cfg.get("combos")
+    if not c:
+        return []
+    pool = [p for p in leer_listado(c["url"], c["paginas"]) if c["filtro"] in p["nombre"].lower()]
+    vistos, buenos = set(), []
+    for p in pool:
+        if p["id"] in vistos:
+            continue
+        vistos.add(p["id"])
+        if fondo_realista(p["imagen"]):
+            buenos.append(p)
+    print(f"Combos Hudson: {len(pool)} encontrados, {len(buenos)} con fondo realista")
+    return buenos
+
+
 def elegir(vendidos, nuevos, orden, dia):
     """Intercala según 'orden' y rota cada día para no repetir siempre los mismos."""
     usados, elegidos = set(), []
@@ -193,6 +227,28 @@ def main():
         items.append({"hora": hora, "tipo": "imagen", "archivo": archivo, "texto": texto(p, desc),
                       "ref": f"{tipo}-{p['id']}"})
         print(hora, tipo, p["nombre"], pesos(p["transf"]))
+
+    # Combos Hudson con fondo realista, en sus propios horarios
+    combos = combos_hudson(cfg)
+    ya = {it["ref"].split("-", 1)[1] for it in items}
+    combos = [p for p in combos if str(p["id"]) not in ya]
+    c = cfg.get("combos", {})
+    if combos:
+        inicio = hoy.toordinal() * len(c["horarios"])
+        elegidos_c = [combos[(inicio + k) % len(combos)] for k in range(min(len(c["horarios"]), len(combos)))]
+        for n, (p, hora) in enumerate(zip(elegidos_c, c["horarios"]), 1):
+            foto = os.path.join(args.salida, f"foto_c{n}.jpg")
+            r = requests.get(p["imagen"], headers=UA, timeout=60)
+            r.raise_for_status()
+            with open(foto, "wb") as f:
+                f.write(r.content)
+            desc = f"{round((1 - p['transf'] / p['lista']) * 100)}% OFF"
+            archivo = f"combo_{n}.jpg"
+            placa(foto, p["nombre"], pesos(p["lista"]), pesos(p["transf"]), pesos(p["cuota"]),
+                  os.path.join(args.salida, archivo), etiqueta=c["etiqueta"], descuento=desc, cuotas=p["cuotas"])
+            items.append({"hora": hora, "tipo": "imagen", "archivo": archivo, "texto": texto(p, desc),
+                          "ref": f"combo-{p['id']}"})
+            print(hora, "combo", p["nombre"], pesos(p["transf"]))
 
     items += leer_ig(cfg, args.salida)
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
