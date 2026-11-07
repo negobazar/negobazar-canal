@@ -1,0 +1,30 @@
+name: Sitronik - vista previa (no publica)
+
+# Arma las placas y los textos del día como lo haría el canal, SIN publicar nada,
+# y los deja en la rama "sitronik-vista" para revisarlos.
+on:
+  workflow_dispatch: {}
+
+permissions: { contents: write }
+
+jobs:
+  vista:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests pillow beautifulsoup4
+      - name: Armar placas y textos
+        env:
+          META_TOKEN: ${{ secrets.META_TOKEN_SITRONIK }}
+          IG_USER_ID: ${{ secrets.SITRONIK_IG_USER_ID }}
+        run: python sitronik/canal/armar_dia.py --salida vista
+      - name: Guardar en la rama sitronik-vista
+        run: |
+          cd vista && rm -f foto_*.jpg
+          git init -q && git checkout -q -b sitronik-vista
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add -A && git commit -q -m "Vista previa $(date -u +%F)"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" sitronik-vista
