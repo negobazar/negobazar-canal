@@ -1,0 +1,103 @@
+name: Sitronik - canal de WhatsApp (difusiones del día)
+
+# Todos los días a las 09:15 (Argentina) arma las placas del día leyendo tiendasitronik.com.ar
+# y las publica en el canal de Sitronik en los horarios de sitronik/canal/config.json.
+# Para probar sin publicar: Actions > este workflow > Run workflow > modo "solo_placas"
+# y descargar las placas desde "Artifacts".
+on:
+  schedule:
+    - cron: "15 12 * * *"   # 09:15 Argentina
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "normal = arma y publica · solo_placas = arma sin publicar"
+        default: "solo_placas"
+        type: choice
+        options: [solo_placas, normal]
+
+concurrency:
+  group: sitronik-canal
+  cancel-in-progress: false
+
+permissions: { contents: read }
+
+jobs:
+  armar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests pillow beautifulsoup4
+      - name: Armar placas y agenda del día
+        run: python sitronik/canal/armar_dia.py --salida sitronik_dia
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sitronik-dia
+          path: sitronik_dia/
+          retention-days: 3
+
+  tramo-1:
+    needs: armar
+    if: github.event_name == 'schedule' || inputs.modo == 'normal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: sitronik-dia, path: sitronik_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Publicar hasta las 13:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
+          NOMBRE_CANAL: sitronik
+        run: |
+          if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
+          python publicador.py --agenda sitronik_dia/agenda.json --desde 00:00 --hasta 13:59
+
+  tramo-2:
+    needs: tramo-1
+    if: always() && needs.tramo-1.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: sitronik-dia, path: sitronik_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Publicar de 14:00 a 18:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
+          NOMBRE_CANAL: sitronik
+        run: |
+          if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
+          python publicador.py --agenda sitronik_dia/agenda.json --desde 14:00 --hasta 18:59
+
+  tramo-3:
+    needs: tramo-2
+    if: always() && needs.tramo-1.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: sitronik-dia, path: sitronik_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Publicar de 19:00 a 23:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK }}
+          WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
+          NOMBRE_CANAL: sitronik
+        run: |
+          if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
+          python publicador.py --agenda sitronik_dia/agenda.json --desde 19:00 --hasta 23:59

@@ -22,7 +22,7 @@ TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 API = "https://gate.whapi.cloud"
 TOKEN = os.environ.get("WHAPI_TOKEN", "").strip()
 CANAL = os.environ.get("WHAPI_CANAL", "").strip()
-NOMBRE_CANAL = "negobazar"
+NOMBRE_CANAL = os.environ.get("NOMBRE_CANAL", "negobazar").strip().lower()
 TOLERANCIA_MIN = 5  # si un item se atraso mas que esto, se saltea (evita rafagas de publicaciones)
 
 
@@ -46,7 +46,7 @@ def buscar_canal():
     for c in canales:
         if NOMBRE_CANAL in str(c.get("name", "")).lower():
             return c["id"]
-    sys.exit("No encontré un canal con 'negobazar' en el nombre. Cargá el secreto WHAPI_CANAL.")
+    sys.exit(f"No encontré un canal con '{NOMBRE_CANAL}' en el nombre. Cargá el secreto WHAPI_CANAL.")
 
 
 def imagen_b64(ruta):
