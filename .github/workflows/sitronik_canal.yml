@@ -30,7 +30,7 @@ on:
         options: ["no", "si"]
 
 concurrency:
-  group: sitronik-canal
+  group: sitronik-canal-${{ inputs.modo || 'normal' }}
   cancel-in-progress: false
 
 permissions: { contents: read }
