@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from placa import placa  # noqa: E402
+import norma  # noqa: E402
 
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -251,6 +252,10 @@ def main():
                           "ref": f"combo-{p['id']}"})
             print(hora, "combo", p["nombre"], pesos(p["transf"]))
 
+    ya = {it["ref"].split("-", 1)[1] for it in items}
+    for m in norma.mensajes(vendidos, nuevos, ya, rot.toordinal(), cfg):
+        items.append(m)
+        print(m["hora"], "texto Norma", m["ref"])
     items += leer_ig(cfg, args.salida)
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
         json.dump({"fecha": hoy.isoformat(), "items": items}, f, ensure_ascii=False, indent=1)
