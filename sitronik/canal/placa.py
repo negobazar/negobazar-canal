@@ -64,19 +64,19 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     im = Image.new("RGBA", (W, H), WHITE)
     d = ImageDraw.Draw(im)
     # Barras de beneficios, igual que la web
-    d.rectangle([0, 0, W, 120], fill=RED)
+    d.rectangle([0, 0, W, 100], fill=RED)
     f = F("Bold", 36)
-    centrar(d, 38, f"{cuotas} CUOTAS SIN INTERÉS", f, WHITE, 0, W // 2)
-    centrar(d, 38, f"{descuento} TRANSFERENCIA", f, WHITE, W // 2, W)
-    d.line([(W // 2, 30), (W // 2, 90)], fill=WHITE, width=3)
-    d.rectangle([0, 120, W, 175], fill=NAVY)
-    centrar(d, 129, "ENVÍO SIN CARGO SUPERANDO LOS $100.000", F("Medium", 28), WHITE)
+    centrar(d, 28, f"{cuotas} CUOTAS SIN INTERÉS", f, WHITE, 0, W // 2)
+    centrar(d, 28, f"{descuento} TRANSFERENCIA", f, WHITE, W // 2, W)
+    d.line([(W // 2, 22), (W // 2, 78)], fill=WHITE, width=3)
+    d.rectangle([0, 100, W, 150], fill=NAVY)
+    centrar(d, 107, "ENVÍO SIN CARGO SUPERANDO LOS $100.000", F("Medium", 28), WHITE)
     # Logo
     lg = Image.open(os.path.join(AQUI, "logo.png")).convert("RGB")
-    lg = lg.resize((300, int(300 * lg.height / lg.width)), Image.LANCZOS)
-    im.paste(lg, ((W - lg.width) // 2, 205))
+    lg = lg.resize((230, int(230 * lg.height / lg.width)), Image.LANCZOS)
+    im.paste(lg, ((W - lg.width) // 2, 166))
     # Foto con sombra (el producto entero, sin recortar)
-    box = (60, 318, W - 60, 938)
+    box = (40, 250, W - 40, 958)
     sombra(im, box, 32)
     tam = (box[2] - box[0], box[3] - box[1])
     src = Image.open(foto).convert("RGB")
@@ -89,8 +89,8 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     # Etiqueta
     fe = F("Bold", 24)
     tw = ancho_espaciado(d, etiqueta, fe, 2)
-    d.rounded_rectangle([88, 346, 88 + tw + 48, 396], 25, fill=BEIGE)
-    espaciado(d, (112, 354), etiqueta, fe, NAVY, 2)
+    d.rounded_rectangle([68, 276, 68 + tw + 48, 326], 25, fill=BEIGE)
+    espaciado(d, (92, 284), etiqueta, fe, NAVY, 2)
     # Nombre (hasta 2 renglones)
     fn = F("Bold", 46)
     lineas = cortar(d, nombre, fn, W - 160)
@@ -102,7 +102,7 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
             while d.textlength(lineas[1] + "…", font=fn) > W - 160:
                 lineas[1] = lineas[1].rsplit(" ", 1)[0]
             lineas[1] += "…"
-    y = 966 if len(lineas) == 1 else 948
+    y = 984 if len(lineas) == 1 else 968
     for ln in lineas:
         centrar(d, y, ln, fn, NAVY)
         y += 56 if len(lineas) == 1 else 50
@@ -123,7 +123,7 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     bx = x + d.textlength(transf, font=fp) + 22
     d.rounded_rectangle([bx, y + 34, bx + bw, y + 88], 14, fill=RED)
     d.text((bx + 20, y + 40), descuento, font=fb, fill=WHITE)
-    y += 128
+    y += 120
     # Pastillas
     chips = ["con transferencia", f"{cuotas} cuotas sin interés de {cuota}"]
     fc = F("Medium", 26)
