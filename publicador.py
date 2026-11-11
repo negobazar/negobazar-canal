@@ -22,6 +22,18 @@ TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 API = "https://gate.whapi.cloud"
 TOKEN = os.environ.get("WHAPI_TOKEN", "").strip()
 CANAL = os.environ.get("WHAPI_CANAL", "").strip()
+REGISTRO = os.environ.get("REGISTRO", "").strip()  # opcional: json {fecha: [refs enviadas]} para no repetir
+
+
+def registrar(item):
+    if not REGISTRO or not item.get("ref"):
+        return
+    try:
+        reg = json.load(open(REGISTRO, encoding="utf-8"))
+    except (OSError, ValueError):
+        reg = {}
+    reg.setdefault(ahora().strftime("%Y-%m-%d"), []).append(item["ref"])
+    json.dump(reg, open(REGISTRO, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 NOMBRE_CANAL = os.environ.get("NOMBRE_CANAL", "negobazar").strip().lower()
 TOLERANCIA_MIN = 5  # si un item se atraso mas que esto, se saltea (evita rafagas de publicaciones)
 
@@ -132,6 +144,8 @@ def main():
             if "archivo" in item and not item["archivo"].startswith(base):
                 item["archivo"] = os.path.join(base, item["archivo"])
             ok, info = enviar(item, canal)
+            if ok:
+                registrar(item)
             print(f"{ahora():%H:%M:%S} {item['hora']} {item['tipo']:<9} {item.get('ref', '')}: {'OK' if ok else 'ERROR ' + info}")
             fallas = 0 if ok else fallas + 1
             if fallas >= 3 or info.startswith(("401", "402", "403")):
@@ -174,6 +188,8 @@ def main():
         if "archivo" in item:
             item["archivo"] = os.path.join(base, item["archivo"])
         ok, info = enviar(item, canal)
+        if ok:
+            registrar(item)
         print(f"{ahora():%H:%M} {item['hora']} {item['tipo']:<9} {item.get('ref', '')}: {'OK' if ok else 'ERROR ' + info}")
         fallas = 0 if ok else fallas + 1
         if fallas >= 3 or info.startswith(("401", "402", "403")):

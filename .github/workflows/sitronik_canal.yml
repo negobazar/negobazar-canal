@@ -33,7 +33,7 @@ concurrency:
   group: sitronik-canal-${{ inputs.modo || 'normal' }}
   cancel-in-progress: false
 
-permissions: { contents: read }
+permissions: { contents: write }
 
 jobs:
   armar:
@@ -45,8 +45,11 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install requests pillow beautifulsoup4
+      - name: Bajar registro de enviados
+        run: git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > registro.json || echo "{}" > registro.json
       - name: Armar placas y agenda del día
         env:
+          REGISTRO: registro.json
           META_TOKEN: ${{ secrets.META_TOKEN_SITRONIK }}
           IG_USER_ID: ${{ secrets.SITRONIK_IG_USER_ID }}
           DIAS_ADELANTE: ${{ inputs.dias_adelante }}
@@ -69,14 +72,26 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > registro.json || echo "{}" > registro.json
       - name: Publicar una placa ahora
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK || secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
           NOMBRE_CANAL: sitronik
+          REGISTRO: registro.json
         run: |
+          python sitronik/canal/registro.py filtrar sitronik_dia/agenda.json registro.json
           python3 sitronik/canal/prueba.py sitronik_dia/agenda.json "${{ inputs.cantidad }}" "${{ inputs.bienvenida }}"
           python publicador.py --agenda sitronik_dia/agenda.json --desde 00:00 --hasta 23:59 --cada "${{ inputs.cada }}"
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b sitronik-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sitronik-registro
 
   tramo-1:
     needs: armar
@@ -90,14 +105,26 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > registro.json || echo "{}" > registro.json
       - name: Publicar hasta las 13:59
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK || secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
           NOMBRE_CANAL: sitronik
+          REGISTRO: registro.json
         run: |
+          python sitronik/canal/registro.py filtrar sitronik_dia/agenda.json registro.json
           if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
           python publicador.py --agenda sitronik_dia/agenda.json --desde 00:00 --hasta 13:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b sitronik-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sitronik-registro
 
   tramo-2:
     needs: tramo-1
@@ -111,14 +138,26 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > registro.json || echo "{}" > registro.json
       - name: Publicar de 14:00 a 18:59
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK || secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
           NOMBRE_CANAL: sitronik
+          REGISTRO: registro.json
         run: |
+          python sitronik/canal/registro.py filtrar sitronik_dia/agenda.json registro.json
           if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
           python publicador.py --agenda sitronik_dia/agenda.json --desde 14:00 --hasta 18:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b sitronik-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sitronik-registro
 
   tramo-3:
     needs: tramo-2
@@ -132,11 +171,23 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > registro.json || echo "{}" > registro.json
       - name: Publicar de 19:00 a 23:59
         env:
           WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN_SITRONIK || secrets.WHAPI_TOKEN }}
           WHAPI_CANAL: ${{ secrets.WHAPI_CANAL_SITRONIK }}
           NOMBRE_CANAL: sitronik
+          REGISTRO: registro.json
         run: |
+          python sitronik/canal/registro.py filtrar sitronik_dia/agenda.json registro.json
           if [ -z "$WHAPI_TOKEN" ]; then echo "Todavia no esta cargado el secreto WHAPI_TOKEN_SITRONIK: no publico."; exit 0; fi
           python publicador.py --agenda sitronik_dia/agenda.json --desde 19:00 --hasta 23:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin sitronik-registro && git show origin/sitronik-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b sitronik-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" sitronik-registro

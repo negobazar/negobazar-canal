@@ -25,6 +25,7 @@ import norma  # noqa: E402
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 AQUI = os.path.dirname(os.path.abspath(__file__))
 UA = {"User-Agent": "Mozilla/5.0 (Sitronik canal)"}
+DIAS_SIN_REPETIR = 3
 
 
 def precio_num(txt):
@@ -210,6 +211,22 @@ def main():
         sys.exit("No pude leer productos de la tienda.")
 
     hoy = datetime.datetime.now(TZ).date()
+    # No repetir productos publicados los últimos días (registro de enviados, si está)
+    recientes = set()
+    try:
+        reg = json.load(open(os.environ.get("REGISTRO", ""), encoding="utf-8"))
+        desde = (hoy - datetime.timedelta(days=DIAS_SIN_REPETIR)).isoformat()
+        for fecha, refs in reg.items():
+            if desde <= fecha < hoy.isoformat():
+                recientes |= {r.split("-", 1)[1] for r in refs if "-" in r}
+    except (OSError, ValueError):
+        pass
+
+    def sin_recientes(pool, minimo):
+        f = [p for p in pool if str(p["id"]) not in recientes]
+        return f if len(f) >= minimo else pool
+    vendidos, nuevos = sin_recientes(vendidos, 3), sin_recientes(nuevos, 3)
+    print(f"Sin repetir {len(recientes)} productos de los últimos {DIAS_SIN_REPETIR} días")
     rot = hoy + datetime.timedelta(days=int(os.environ.get("DIAS_ADELANTE", "0") or 0))
     orden = cfg["orden"][:len(cfg["horarios"])]
     elegidos = elegir(vendidos, nuevos, orden, rot.toordinal())
@@ -232,6 +249,7 @@ def main():
 
     # Combos Hudson con fondo realista, en sus propios horarios
     combos = combos_hudson(cfg)
+    combos = sin_recientes(combos, len(cfg.get("combos", {}).get("horarios", [])))
     ya = {it["ref"].split("-", 1)[1] for it in items}
     combos = [p for p in combos if str(p["id"]) not in ya]
     c = cfg.get("combos", {})
