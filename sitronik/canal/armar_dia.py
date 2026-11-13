@@ -146,7 +146,6 @@ def elegir(vendidos, nuevos, orden, dia):
 def texto(p, desc):
     return (f"✨ *{p['nombre']}*\n\n"
             f"💸 *{pesos(p['transf'])}* con transferencia ({desc})\n"
-            f"💳 o {p['cuotas']} cuotas sin interés de {pesos(p['cuota'])}\n"
             f"🚚 Envío sin cargo superando los $100.000\n\n"
             f"🛒 Compralo acá 👉 {p['url']}")
 

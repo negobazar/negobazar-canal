@@ -66,9 +66,7 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     # Barras de beneficios, igual que la web
     d.rectangle([0, 0, W, 100], fill=RED)
     f = F("Bold", 36)
-    centrar(d, 28, f"{cuotas} CUOTAS SIN INTERÉS", f, WHITE, 0, W // 2)
-    centrar(d, 28, f"{descuento} TRANSFERENCIA", f, WHITE, W // 2, W)
-    d.line([(W // 2, 22), (W // 2, 78)], fill=WHITE, width=3)
+    centrar(d, 28, f"{descuento} PAGANDO CON TRANSFERENCIA", f, WHITE)
     d.rectangle([0, 100, W, 150], fill=NAVY)
     centrar(d, 107, "ENVÍO SIN CARGO SUPERANDO LOS $100.000", F("Medium", 28), WHITE)
     # Logo
@@ -125,10 +123,10 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     d.text((bx + 20, y + 40), descuento, font=fb, fill=WHITE)
     y += 120
     # Pastillas
-    chips = ["con transferencia", f"{cuotas} cuotas sin interés de {cuota}"]
+    chips = ["precio con transferencia"]
     fc = F("Medium", 26)
     anchos = [d.textlength(t, font=fc) + 48 for t in chips]
-    cx = (W - sum(anchos) - 16) / 2
+    cx = (W - sum(anchos) - 16 * (len(anchos) - 1)) / 2
     for t, w in zip(chips, anchos):
         d.rounded_rectangle([cx, y, cx + w, y + 50], 25, fill=BG)
         d.text((cx + 24, y + 9), t, font=fc, fill=NAVY)

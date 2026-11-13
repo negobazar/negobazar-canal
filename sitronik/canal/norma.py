@@ -9,7 +9,7 @@ Usa productos que no salieron ese día en las placas. Las plantillas rotan por d
 
 NOVEDAD = [
     "¡Holaaa! 🙋‍♀️ Les cuento algo: entró *{nombre}* y me encantó 😍\n"
-    "Está a *{precio}* por transferencia, o en {cuotas} cuotas sin interés.\n\n"
+    "Está a *{precio}* por transferencia.\n\n"
     "Lo ven acá 👉 {url}\n\nNorma 💜",
 
     "Novedad en Sitronik ✨\nLlegó *{nombre}*. Cuando lo vi dije: esto tiene que estar en el canal 🙌\n"
@@ -21,7 +21,7 @@ NOVEDAD = [
 
 VENDIDO = [
     "Lo que más se llevan estos días es *{nombre}* 🔥 ¡y no me sorprende! 😄\n"
-    "*{precio}* por transferencia o en {cuotas} cuotas sin interés.\n\n👉 {url}\n\n"
+    "*{precio}* por transferencia.\n\n👉 {url}\n\n"
     "¿Alguna duda? Escríbannos, que respondemos nosotros 💬",
 
     "Top de la semana en Sitronik 🏆\n*{nombre}*. Ustedes lo eligieron y nosotros lo amamos 💜\n"
@@ -29,8 +29,8 @@ VENDIDO = [
 ]
 
 FIRMA = [
-    "Hoy les escribimos los dos 🙌\nLes queremos recomendar *{nombre}*: *{precio}* por transferencia "
-    "o en {cuotas} cuotas sin interés.\n\nGracias por estar acá, este canal es nuestro rinconcito con ustedes 💜\n\n"
+    "Hoy les escribimos los dos 🙌\nLes queremos recomendar *{nombre}*: *{precio}* por transferencia.\n\n"
+    "Gracias por estar acá, este canal es nuestro rinconcito con ustedes 💜\n\n"
     "👉 {url}\n\nNorma y David",
 ]
 
