@@ -59,7 +59,7 @@ def sombra(base, box, r, blur=22, alpha=45, dy=10):
     base.alpha_composite(sh.filter(ImageFilter.GaussianBlur(blur)))
 
 
-def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", descuento="25% OFF", cuotas=9):
+def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", descuento="20% OFF", cuotas=9):
     """foto: ruta de la imagen del producto. Precios como texto ya formateado ("$30.653")."""
     im = Image.new("RGBA", (W, H), WHITE)
     d = ImageDraw.Draw(im)
