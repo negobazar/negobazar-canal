@@ -58,7 +58,7 @@
   {
    "hora": "18:40",
    "tipo": "texto",
-   "texto": "👀 Spoiler para mañana…\n\nVuelve *algo que muchos nos estaban pidiendo* y que se había agotado 😱\n\nMañana les cuento. Quedate atento al canal 🔔"
+   "texto": "👀 Spoiler…\n\nMuy pronto vuelve *algo que muchos nos estaban pidiendo* y que se había agotado 😱\n\nQuedate atento al canal 🔔"
   }
  ],
  "2026-11-29": [
@@ -84,9 +84,16 @@
    "texto": "🙌 ¡GRACIAS! Fue un finde increíble 💛\n\nGracias a todos los que se acercaron al showroom.\nY atentos al canal 👀 porque *entra mercadería nueva* y se vienen más sorpresas 🔥"
   },
   {
-   "hora": "12:00",
+   "hora": "19:40",
    "tipo": "texto",
-   "texto": "🛋️ *¡VOLVIERON LOS SILLONES!* 🛋️\n\nLos que estaban *agotados* ya están de nuevo en el showroom 🙌\nEntraron *solo 20 unidades*, así que si lo venías esperando… *es hoy* 🏃‍♂️💨\n\n⏰ Hoy de 9 a 17 hs\n📍 White 2075, Parque Avellaneda (CABA)"
+   "texto": "🛋️ *¡LLEGARON LOS SILLONES!* 🛋️\n\nLos que estaban *agotados* acaban de entrar 🙌\nSon *solo 20 unidades* y ahora con *20% OFF* 🔥\n\nDesde *mañana lunes* los podés venir a ver al showroom 👀\n📍 White 2075, Parque Avellaneda (CABA)"
+  }
+ ],
+ "2026-11-30": [
+  {
+   "hora": "08:00",
+   "tipo": "texto",
+   "texto": "🛋️ *Ya están en el showroom:* volvieron los sillones que estaban agotados 🙌\n\n🔥 *20% OFF*\n📦 Solo *20 unidades*: cuando se terminan, se terminan 😱\n\nVení a verlos y probarlos 👇\n📍 White 2075, Parque Avellaneda (CABA)"
   }
  ]
 }
