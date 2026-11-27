@@ -50,6 +50,26 @@ COMUNIDAD = {
 }
 
 
+# Mensajes para motivar y generar urgencia, en las pausas entre rafagas (rotan cada dia)
+HORAS_GANCHO = ["09:20", "10:40", "12:00", "13:20", "16:00", "17:20", "18:40"]
+GANCHOS = [
+    "⏰ *Lo que ves hoy, mañana puede no estar.*\nEl stock del galpón vuela y no siempre vuelve 🏃‍♂️💨\n\n👉 https://pedidos.negobazar.com.ar",
+    "💡 ¿Sabías que en el galpón *no hay mínimo de compra*?\nLlevate 1 o llevate 100, al mismo precio increíble 🙌\n\n👉 https://pedidos.negobazar.com.ar",
+    "🔥 *Precios de galpón, no de shopping.*\nRenová tu casa sin gastar de más 🏠✨\n\n👉 https://pedidos.negobazar.com.ar",
+    "💼 ¿Emprendés o revendés?\nAcá comprás *barato y sin mínimo* para arrancar tu negocio hoy mismo 💪\n\n👉 https://pedidos.negobazar.com.ar",
+    "😱 Los productos que más se piden *se agotan primero*.\nSi te gustó algo, no lo dejes para después 👀\n\n👉 https://pedidos.negobazar.com.ar",
+    "🛒 *Armá tu pedido en 2 minutos:* elegís, sumás al carrito y listo ✅\n¡Así de fácil!\n\n👉 https://pedidos.negobazar.com.ar",
+    "🎯 *Tip del galpón:* juntá lo que necesitás para la cocina, el baño y la mesa en un solo pedido y ahorrás tiempo y plata 💸\n\n👉 https://pedidos.negobazar.com.ar",
+    "📦 *Entra y sale mercadería todos los días.*\nQuedate cerca del canal, que acá aparecen primero las oportunidades 👀🔥",
+    "🙋‍♀️ ¿Tenés dudas con algún producto?\nEscribinos y te asesoramos, sin compromiso 💬\n\n👉 https://pedidos.negobazar.com.ar",
+    "✨ *Tu casa merece una renovación* (y tu bolsillo, un respiro) 😉\nPrecios increíbles en todo el galpón 🔥\n\n👉 https://pedidos.negobazar.com.ar",
+    "🚀 *Los que compran temprano, eligen primero.*\nDespués quedan los colores y modelos que nadie quería 😅\n\n👉 https://pedidos.negobazar.com.ar",
+    "💸 Comprar barato *no es suerte, es estar en el lugar correcto*.\nY vos ya estás acá 😎\n\n👉 https://pedidos.negobazar.com.ar",
+    "🧾 ¿Para regalar, para tu casa o para revender?\nEn el galpón hay para todo, y a precios que no vas a ver en otro lado 🔥\n\n👉 https://pedidos.negobazar.com.ar",
+    "⚡ *¡Atención!* Seguimos subiendo productos durante el día.\nActivá las notificaciones del canal 🔔 para no perderte nada",
+]
+
+
 def pesos(n):
     return "$" + f"{round(n):,}".replace(",", ".")
 
@@ -158,6 +178,12 @@ def main():
         if hora not in ocupadas:
             items.append({"hora": hora, "tipo": "texto", "texto": msg, "ref": f"galpon-{nombre}"})
     items += especiales
+    usadas = {m["hora"] for m in items}
+    libres = [h for h in HORAS_GANCHO if h not in usadas]
+    k = (hoy.toordinal() * len(HORAS_GANCHO)) % len(GANCHOS)
+    for n, hora in enumerate(libres):
+        items.append({"hora": hora, "tipo": "texto", "texto": GANCHOS[(k + n) % len(GANCHOS)],
+                      "ref": f"galpon-gancho-{hoy.isoformat()}-{n}"})
 
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
         json.dump({"fecha": hoy.isoformat(), "items": items}, f, ensure_ascii=False, indent=1)
