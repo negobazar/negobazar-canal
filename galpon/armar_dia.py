@@ -14,6 +14,7 @@ import argparse
 import datetime
 import json
 import os
+import random
 import zoneinfo
 
 import requests
@@ -69,7 +70,8 @@ def main():
     con_flyer = leer({"con_flyer": 1})
     print(f"Catalogo: {len(todos)} productos, {len(con_flyer)} con flyer")
 
-    pendientes = [p for p in todos if p.get("disponible") is not False and not (p.get("flyerUrl") or "").strip()]
+    pendientes = [p for p in todos if p.get("origen") == "showroom" and p.get("disponible") is not False
+                  and not (p.get("flyerUrl") or "").strip()]
     candidatos = [p for p in con_flyer if p.get("disponible") is not False and p.get("url")]
 
     recientes = set()
@@ -88,11 +90,13 @@ def main():
     nuevos = [p for p in candidatos if ref(p) not in recientes]
     if len(nuevos) < len(HORARIOS):          # si ya se publico casi todo, se vuelve a empezar
         nuevos = candidatos
-    rot = hoy.toordinal() * len(HORARIOS)
     resto = [p for p in nuevos if not p.get("destacado")]
-    if resto:
-        k = rot % len(resto)
-        resto = resto[k:] + resto[:k]
+    random.Random(hoy.toordinal()).shuffle(resto)      # mezcla distinta cada dia (no 3 baterias seguidas)
+    vistos_cat, primero, despues = set(), [], []
+    for p in resto:                                     # una por categoria antes de repetir categoria
+        (despues if p.get("categoria") in vistos_cat else primero).append(p)
+        vistos_cat.add(p.get("categoria"))
+    resto = primero + despues
     orden = [p for p in nuevos if p.get("destacado")][:3] + resto
 
     items, fallas = [], []
