@@ -25,7 +25,8 @@ import norma  # noqa: E402
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 AQUI = os.path.dirname(os.path.abspath(__file__))
 UA = {"User-Agent": "Mozilla/5.0 (Sitronik canal)"}
-DIAS_SIN_REPETIR = 3
+DIAS_SIN_REPETIR = 7
+BUSCAR = "https://tiendasitronik.com.ar/search/?q={q}"
 
 
 def precio_num(txt):
@@ -126,13 +127,13 @@ def combos_hudson(cfg):
     return buenos
 
 
-def elegir(vendidos, nuevos, orden, dia):
+def elegir(vendidos, nuevos, orden, dia, tema=None):
     """Intercala según 'orden' y rota cada día para no repetir siempre los mismos."""
     usados, elegidos = set(), []
-    pos = {"vendido": dia * 3, "nuevo": dia * 2}
-    pools = {"vendido": vendidos, "nuevo": nuevos}
+    pos = {"vendido": dia * 3, "nuevo": dia * 2, "tema": dia * 4}
+    pools = {"vendido": vendidos, "nuevo": nuevos, "tema": tema or []}
     for tipo in orden:
-        pool = pools[tipo] or pools["vendido" if tipo == "nuevo" else "nuevo"]
+        pool = pools.get(tipo) or pools["vendido"] or pools["nuevo"]
         for _ in range(len(pool)):
             p = pool[pos[tipo] % len(pool)]
             pos[tipo] += 1
@@ -144,10 +145,44 @@ def elegir(vendidos, nuevos, orden, dia):
 
 
 def texto(p, desc):
-    return (f"✨ *{p['nombre']}*\n\n"
-            f"💸 *{pesos(p['transf'])}* con transferencia ({desc})\n"
+    cab = (p["tema"]["titulo"] + "\n\n") if p.get("tema") else ""
+    return (f"{cab}✨ *{p['nombre']}*\n\n"
+            f"💳 Podés abonar en cuotas sin interés\n"
             f"🚚 Envío sin cargo superando los $100.000\n\n"
             f"🛒 Compralo acá 👉 {p['url']}")
+
+
+def en_rango(hoy, desde, hasta):
+    md = hoy.strftime("%m-%d")
+    return desde <= md <= hasta if desde <= hasta else (md >= desde or md <= hasta)
+
+
+def productos_tema(cfg, hoy, dia):
+    """Productos de las fechas especiales / temporada activas hoy, intercalando temas."""
+    activos = [t for t in cfg.get("temas", []) if en_rango(hoy, t["desde"], t["hasta"])]
+    if not activos:
+        return []
+    listas = []
+    for t in activos:
+        vistos, lista = set(), []
+        qs = t["busquedas"][:]
+        k = dia % len(qs)
+        qs = qs[k:] + qs[:k]          # cada dia arranca por otra busqueda
+        for q in qs:
+            for p in leer_listado(BUSCAR.format(q=requests.utils.quote(q)), 2):
+                if p["id"] not in vistos:
+                    vistos.add(p["id"])
+                    p["tema"] = t
+                    lista.append(p)
+        print(f"Tema {t['nombre']}: {len(lista)} productos")
+        listas.append(lista)
+    mezcla, i = [], 0
+    while any(i < len(l) for l in listas):
+        for l in listas:
+            if i < len(l):
+                mezcla.append(l[i])
+        i += 1
+    return mezcla
 
 
 def leer_ig(cfg, salida):
@@ -228,7 +263,8 @@ def main():
     print(f"Sin repetir {len(recientes)} productos de los últimos {DIAS_SIN_REPETIR} días")
     rot = hoy + datetime.timedelta(days=int(os.environ.get("DIAS_ADELANTE", "0") or 0))
     orden = cfg["orden"][:len(cfg["horarios"])]
-    elegidos = elegir(vendidos, nuevos, orden, rot.toordinal())
+    tema = sin_recientes(productos_tema(cfg, hoy, rot.toordinal()), 4)
+    elegidos = elegir(vendidos, nuevos, orden, rot.toordinal(), tema)
     etiquetas = cfg["etiquetas"]
 
     items = []
@@ -241,7 +277,8 @@ def main():
         desc = f"{round((1 - p['transf'] / p['lista']) * 100)}% OFF"
         archivo = f"placa_{n}.jpg"
         placa(foto, p["nombre"], pesos(p["lista"]), pesos(p["transf"]), pesos(p["cuota"]),
-              os.path.join(args.salida, archivo), etiqueta=etiquetas[tipo], descuento=desc, cuotas=p["cuotas"])
+              os.path.join(args.salida, archivo), etiqueta=(p["tema"]["etiqueta"] if p.get("tema") else etiquetas.get(tipo, "")),
+              descuento=desc, cuotas=p["cuotas"])
         items.append({"hora": hora, "tipo": "imagen", "archivo": archivo, "texto": texto(p, desc),
                       "ref": f"{tipo}-{p['id']}"})
         print(hora, tipo, p["nombre"], pesos(p["transf"]))

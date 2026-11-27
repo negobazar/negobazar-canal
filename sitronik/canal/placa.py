@@ -123,7 +123,7 @@ def placa(foto, nombre, lista, transf, cuota, salida, etiqueta="NUEVO INGRESO", 
     d.text((bx + 20, y + 40), descuento, font=fb, fill=WHITE)
     y += 120
     # Pastillas
-    chips = ["precio con transferencia"]
+    chips = ["precio con transferencia", "cuotas sin interés"]
     fc = F("Medium", 26)
     anchos = [d.textlength(t, font=fc) + 48 for t in chips]
     cx = (W - sum(anchos) - 16 * (len(anchos) - 1)) / 2

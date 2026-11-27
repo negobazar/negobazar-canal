@@ -1,55 +1,222 @@
 {
  "horarios": [
-  "10:00",
-  "12:30",
-  "15:00",
+  "07:30",
+  "08:00",
+  "11:30",
+  "13:00",
+  "14:00",
   "17:30",
-  "19:30",
-  "21:30"
+  "19:00"
  ],
  "horarios_ig": [
-  "20:30"
+  "20:00"
  ],
  "orden": [
+  "tema",
   "vendido",
+  "tema",
   "nuevo",
-  "vendido",
-  "nuevo",
-  "vendido",
-  "nuevo"
+  "tema",
+  "tema",
+  "vendido"
  ],
  "etiquetas": {
   "vendido": "MÁS VENDIDO",
-  "nuevo": "NUEVO INGRESO"
+  "nuevo": "NUEVO INGRESO",
+  "tema": "ESPECIAL"
  },
  "url_mas_vendidos": "https://tiendasitronik.com.ar/productos/?sort_by=best-selling",
  "url_nuevos": "https://tiendasitronik.com.ar/lo-nuevo-qehlq/",
- "paginas": 3,
+ "paginas": 8,
  "combos": {
   "url": "https://tiendasitronik.com.ar/combos-de-cocina/",
   "filtro": "hudson",
   "paginas": 4,
   "etiqueta": "COMBO HUDSON",
   "horarios": [
-   "11:15",
-   "13:45",
-   "16:15",
-   "18:45",
-   "20:00",
-   "22:15"
+   "08:30",
+   "12:00",
+   "13:30",
+   "14:30",
+   "18:00",
+   "19:30"
   ]
  },
  "norma": {
   "horarios": [
-   "11:40",
-   "18:20"
+   "12:30",
+   "18:30"
   ],
   "descuento": "20%",
   "comunidad": {
-   "buen_dia": "09:45",
-   "beneficios": "10:40",
-   "encuesta": "16:45",
-   "cierre": "22:30"
+   "buen_dia": "07:00",
+   "beneficios": "11:00",
+   "encuesta": "17:00",
+   "cierre": "20:30"
   }
- }
+ },
+ "temas": [
+  {
+   "nombre": "navidad",
+   "desde": "12-01",
+   "hasta": "12-24",
+   "etiqueta": "ESPECIAL NAVIDAD",
+   "titulo": "🎄 *Especial Navidad*",
+   "busquedas": [
+    "copa",
+    "fuente",
+    "bandeja",
+    "vajilla",
+    "asadera",
+    "budinera",
+    "mantel",
+    "cubiertos",
+    "juego de platos",
+    "ensaladera",
+    "panera"
+   ]
+  },
+  {
+   "nombre": "fin_de_ano",
+   "desde": "12-26",
+   "hasta": "12-31",
+   "etiqueta": "ESPECIAL FIN DE AÑO",
+   "titulo": "🥂 *Especial Fin de Año*",
+   "busquedas": [
+    "copa",
+    "frapera",
+    "hielera",
+    "vaso",
+    "jarra",
+    "fuente",
+    "bandeja",
+    "cubiertos"
+   ]
+  },
+  {
+   "nombre": "reyes",
+   "desde": "01-01",
+   "hasta": "01-06",
+   "etiqueta": "REYES",
+   "titulo": "👑 *Especial Reyes*",
+   "busquedas": [
+    "termo",
+    "botella",
+    "mochila",
+    "conservadora",
+    "vaso termico",
+    "mate"
+   ]
+  },
+  {
+   "nombre": "san_valentin",
+   "desde": "02-07",
+   "hasta": "02-14",
+   "etiqueta": "SAN VALENTÍN",
+   "titulo": "💜 *Especial San Valentín*",
+   "busquedas": [
+    "taza",
+    "cafetera",
+    "desayuno",
+    "copa",
+    "molde corazon",
+    "tostadora",
+    "jarro"
+   ]
+  },
+  {
+   "nombre": "vuelta_al_cole",
+   "desde": "02-15",
+   "hasta": "03-15",
+   "etiqueta": "VUELTA AL COLE",
+   "titulo": "🎒 *Vuelta al cole*",
+   "busquedas": [
+    "vianda",
+    "lunchera",
+    "botella",
+    "termo",
+    "tupper",
+    "hermetico",
+    "mochila",
+    "vaso termico"
+   ]
+  },
+  {
+   "nombre": "verano",
+   "desde": "11-15",
+   "hasta": "03-15",
+   "etiqueta": "ESPECIAL VERANO",
+   "titulo": "☀️ *Especial Verano*",
+   "busquedas": [
+    "camping",
+    "jardin",
+    "conservadora",
+    "termo",
+    "botella",
+    "jarra",
+    "vaso",
+    "hielera",
+    "heladera",
+    "reposera",
+    "pileta",
+    "parrilla",
+    "asador",
+    "mate",
+    "sombrilla",
+    "manguera",
+    "hielo",
+    "limonada"
+   ]
+  },
+  {
+   "nombre": "dia_de_la_madre",
+   "desde": "10-05",
+   "hasta": "10-19",
+   "etiqueta": "DÍA DE LA MADRE",
+   "titulo": "💐 *Especial Día de la Madre*",
+   "busquedas": [
+    "cafetera",
+    "taza",
+    "juego de te",
+    "batidora",
+    "sarten",
+    "bateria",
+    "vajilla"
+   ]
+  },
+  {
+   "nombre": "dia_del_padre",
+   "desde": "06-05",
+   "hasta": "06-21",
+   "etiqueta": "DÍA DEL PADRE",
+   "titulo": "🔥 *Especial Día del Padre*",
+   "busquedas": [
+    "parrilla",
+    "asador",
+    "cuchillo",
+    "tabla",
+    "termo",
+    "mate",
+    "bifera",
+    "conservadora"
+   ]
+  },
+  {
+   "nombre": "invierno",
+   "desde": "05-01",
+   "hasta": "08-31",
+   "etiqueta": "ESPECIAL INVIERNO",
+   "titulo": "❄️ *Especial Invierno*",
+   "busquedas": [
+    "olla",
+    "cacerola",
+    "pava",
+    "termo",
+    "mate",
+    "jarro",
+    "taza",
+    "guiso"
+   ]
+  }
+ ]
 }
