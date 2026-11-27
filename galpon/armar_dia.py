@@ -27,18 +27,18 @@ UA = {"User-Agent": "Mozilla/5.0 (Negobazar galpon canal)"}
 DIAS_SIN_REPETIR = 3
 
 # Franjas: 07:00-08:30 / 11:00-14:30 / 17:00-20:30
-# Un producto cada 30 minutos, corrido de 08:30 (despues del anuncio) a 20:00
-def _cada(desde, hasta, paso=30):
-    h, m = map(int, desde.split(":")); fin = tuple(map(int, hasta.split(":")))
-    out = []
-    while (h, m) <= fin:
-        out.append(f"{h:02d}:{m:02d}")
-        m += paso
-        h, m = h + m // 60, m % 60
+# Rafagas: 3 productos cada 10 minutos, despues 1 hora de pausa, y otra rafaga (08:30 a ~19:30)
+def _rafagas(inicio="08:30", fin="19:30", por_rafaga=3, paso=10, pausa=60):
+    h, m = map(int, inicio.split(":"))
+    t, tope, out = h * 60 + m, sum(x * y for x, y in zip(map(int, fin.split(":")), (60, 1))), []
+    while t <= tope:
+        for k in range(por_rafaga):
+            out.append(f"{(t + k * paso) // 60:02d}:{(t + k * paso) % 60:02d}")
+        t += (por_rafaga - 1) * paso + pausa
     return out
 
 
-HORARIOS = _cada("08:30", "20:00")
+HORARIOS = _rafagas()
 COMUNIDAD = {
     "07:00": ("buendia", "☀️ ¡Buen día! Abrió el *galpón digital de Negobazar* 🏭\n\n"
                          "Hoy vamos a ir subiendo ofertas durante el día.\n"
