@@ -17,6 +17,8 @@ import os
 import random
 import zoneinfo
 
+import shutil
+
 import requests
 
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
@@ -50,13 +52,30 @@ def leer(params):
 def texto(p):
     pl, pv = p.get("precio_lista") or 0, p.get("precio_venta") or 0
     if pl and pv and pl > pv:
-        precio = f"~{pesos(pl)}~  👉 *{pesos(pv)}* 🔥"
+        precio = (f"🏷️ Precio de lista: ~{pesos(pl)}~\n"
+                  f"🔥 *Precio promo: {pesos(pv)}* ({round((1 - pv / pl) * 100)}% OFF)\n")
     else:
-        precio = f"*{pesos(pv or pl)}*"
-    return (f"🏭 *{p['titulo']}*\n\n"
-            f"💸 {precio}\n"
+        precio = f"🔥 *{pesos(pv or pl)}*\n"
+    return (f"🏭 *{p['titulo']}*\n\n{precio}"
             f"✅ Sin mínimo de compra\n\n"
             f"🛒 Pedilo acá 👉 {p['url']}")
+
+
+def novedades(hoy, salida):
+    """Mensajes especiales del dia (galpon/novedades.json)."""
+    aqui = os.path.dirname(os.path.abspath(__file__))
+    try:
+        todo = json.load(open(os.path.join(aqui, "novedades.json"), encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    items = []
+    for n, m in enumerate(todo.get(hoy.isoformat(), []), 1):
+        it = {"hora": m["hora"], "tipo": m["tipo"], "texto": m["texto"], "ref": f"galpon-nov-{hoy.isoformat()}-{n}"}
+        if m.get("archivo"):
+            shutil.copy(os.path.join(aqui, "recursos", m["archivo"]), os.path.join(salida, m["archivo"]))
+            it["archivo"] = m["archivo"]
+        items.append(it)
+    return items
 
 
 def main():
@@ -119,8 +138,12 @@ def main():
         items.append({"hora": hora, "tipo": "imagen", "archivo": archivo, "texto": texto(p), "ref": ref(p)})
         print(hora, p["titulo"], pesos(p.get("precio_venta") or 0))
 
+    especiales = novedades(hoy, args.salida)
+    ocupadas = {m["hora"] for m in especiales}
     for hora, (nombre, msg) in COMUNIDAD.items():
-        items.append({"hora": hora, "tipo": "texto", "texto": msg, "ref": f"galpon-{nombre}"})
+        if hora not in ocupadas:
+            items.append({"hora": hora, "tipo": "texto", "texto": msg, "ref": f"galpon-{nombre}"})
+    items += especiales
 
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
         json.dump({"fecha": hoy.isoformat(), "items": items}, f, ensure_ascii=False, indent=1)

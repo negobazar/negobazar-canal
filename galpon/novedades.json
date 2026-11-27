@@ -1,0 +1,77 @@
+{
+ "_como_usar": "Mensajes especiales por fecha. Si hay uno a las 07:00 o 20:30 reemplaza al buen dia / cierre comun. 'archivo' se busca en galpon/recursos.",
+ "2026-11-27": [
+  {
+   "hora": "07:00",
+   "tipo": "texto",
+   "texto": "Hola gente bella ☀️\n¡Hoy es *VIERNES* y tu cuerpo lo sabe! 🙌\n\nPero antes de arrancar les quiero contar algo… 👀\nSe vienen cosas *increíbles* en Negobazar.\n\nA las 8 les cuento todo. No se lo pierdan 🔥"
+  },
+  {
+   "hora": "08:00",
+   "tipo": "texto",
+   "texto": "🚨 *¡REMATE TOTAL EN EL SHOWROOM!* 🚨\n\n¿Ya conocés nuestro showroom en *White 2075, Parque Avellaneda*? Bueno… este finde *tenés* que venir 👇\n\n🗓️ *Viernes, sábado y domingo*\n⏰ *De 9 a 17 hs*\n🔥 *20% OFF en TODOS los productos*\n💵 Efectivo o transferencia *al mismo precio*\n\n¿Por qué? Entra mercadería nueva y necesitamos espacio 📦 Así que aprovechamos para que compres a precios increíbles 💥\n\n🏠 Para renovar tu casa\n💼 O para comprar y revender\n\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "11:30",
+   "tipo": "imagen",
+   "archivo": "cupon_10000.jpg",
+   "texto": "🎁 *¡Y eso no es todo!*\n\nLas *primeras 100 personas* que vengan al showroom este finde se llevan un *cupón de $10.000* para usar cuando quieran 🙌\n\n⏰ Viernes, sábado y domingo de 9 a 17 hs\n📍 White 2075, Parque Avellaneda (CABA)\n\n¡Corré que vuelan! 🏃‍♀️💨"
+  },
+  {
+   "hora": "14:30",
+   "tipo": "texto",
+   "texto": "⏳ ¡Últimas horas de hoy!\n\nHasta las *17 hs* estamos con *20% OFF en todo* en el showroom 🔥\nY si no llegás hoy, tranqui: seguimos *sábado y domingo* 🙌\n\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "20:30",
+   "tipo": "texto",
+   "texto": "🌙 ¡Qué viernes! Gracias a todos los que se acercaron 💛\n\nMañana *sábado* seguimos de *9 a 17 hs* con:\n🔥 20% OFF en todo\n💵 Efectivo o transferencia al mismo precio\n🎁 Cupón de $10.000 para los primeros 100\n\n📍 White 2075, Parque Avellaneda (CABA)\n\n¡Los esperamos! 🙌"
+  }
+ ],
+ "2026-11-28": [
+  {
+   "hora": "07:00",
+   "tipo": "texto",
+   "texto": "¡Buen sábado, gente bella! ☀️\n\nHoy sigue el *REMATE TOTAL* en el showroom 🔥\n\n🔥 *20% OFF en todo*\n💵 Efectivo o transferencia *al mismo precio*\n⏰ De *9 a 17 hs*\n📍 White 2075, Parque Avellaneda (CABA)\n\nY ojo… el *cupón de $10.000* sigue en juego 👀🎁"
+  },
+  {
+   "hora": "11:30",
+   "tipo": "imagen",
+   "archivo": "cupon_10000.jpg",
+   "texto": "🎁 ¿Todavía no tenés tu *cupón de $10.000*?\n\nEs para las *primeras 100 personas* que nos visiten este finde, y lo usás cuando quieras 🙌\n\n⏰ Hoy y mañana de 9 a 17 hs\n📍 White 2075, Parque Avellaneda (CABA)\n\n¡Mientras queden! 👀"
+  },
+  {
+   "hora": "14:30",
+   "tipo": "texto",
+   "texto": "⏳ ¡Quedan pocas horas de hoy!\n\nHasta las *17 hs* con *20% OFF en todo* 🔥\nEntra mercadería nueva y necesitamos espacio: es *ahora* 💥\n\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "20:30",
+   "tipo": "texto",
+   "texto": "🌙 Gracias por otro día increíble 💛\n\n⚠️ Mañana *domingo* es el *ÚLTIMO DÍA* del remate 😱\n\n⏰ De 9 a 17 hs\n🔥 20% OFF en todo\n🎁 Cupón de $10.000 para los primeros 100\n\n📍 White 2075, Parque Avellaneda (CABA)\n\n¡No te lo pierdas!"
+  }
+ ],
+ "2026-11-29": [
+  {
+   "hora": "07:00",
+   "tipo": "texto",
+   "texto": "⚠️ *¡ÚLTIMO DÍA!* ⚠️\n\nBuen domingo, gente bella ☀️\nHoy es tu última oportunidad de aprovechar el *REMATE TOTAL* 🔥\n\n🔥 *20% OFF en todo*\n💵 Efectivo o transferencia *al mismo precio*\n⏰ De *9 a 17 hs*\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "11:30",
+   "tipo": "imagen",
+   "archivo": "cupon_10000.jpg",
+   "texto": "🎁 *Última chance* de llevarte tu *cupón de $10.000* 🙌\n\nPara las *primeras 100 personas* del finde. Lo usás cuando quieras.\n\n⏰ Hoy de 9 a 17 hs\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "14:30",
+   "tipo": "texto",
+   "texto": "⏰ *Cerramos a las 17 hs* y se termina el remate 😱\n\nÚltimas horas con *20% OFF en todo* 🔥\n¡Te esperamos!\n\n📍 White 2075, Parque Avellaneda (CABA)"
+  },
+  {
+   "hora": "20:30",
+   "tipo": "texto",
+   "texto": "🙌 ¡GRACIAS! Fue un finde increíble 💛\n\nGracias a todos los que se acercaron al showroom.\nY atentos al canal 👀 porque *entra mercadería nueva* y se vienen más sorpresas 🔥"
+  }
+ ]
+}
