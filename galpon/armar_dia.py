@@ -24,10 +24,21 @@ import requests
 TZ = zoneinfo.ZoneInfo("America/Argentina/Buenos_Aires")
 FEED = "https://pedidos.negobazar.com.ar/difusiones.json"
 UA = {"User-Agent": "Mozilla/5.0 (Negobazar galpon canal)"}
-DIAS_SIN_REPETIR = 10
+DIAS_SIN_REPETIR = 3
 
 # Franjas: 07:00-08:30 / 11:00-14:30 / 17:00-20:30
-HORARIOS = ["08:15", "11:00", "12:00", "13:00", "14:00", "17:00", "17:45", "18:30", "19:15", "20:00"]
+# Un producto cada 10 minutos dentro de las franjas (despues del anuncio de la manana)
+def _cada10(desde, hasta):
+    h, m = map(int, desde.split(":")); fin = tuple(map(int, hasta.split(":")))
+    out = []
+    while (h, m) <= fin:
+        out.append(f"{h:02d}:{m:02d}")
+        m += 10
+        h, m = h + m // 60, m % 60
+    return out
+
+
+HORARIOS = _cada10("08:10", "08:30") + _cada10("11:00", "14:20") + _cada10("17:00", "20:20")
 COMUNIDAD = {
     "07:00": ("buendia", "☀️ ¡Buen día! Abrió el *galpón digital de Negobazar* 🏭\n\n"
                          "Hoy vamos a ir subiendo ofertas durante el día.\n"
@@ -106,9 +117,11 @@ def main():
     def ref(p):
         return "galpon-" + str(p["id"])
 
-    nuevos = [p for p in candidatos if ref(p) not in recientes]
-    if len(nuevos) < len(HORARIOS):          # si ya se publico casi todo, se vuelve a empezar
-        nuevos = candidatos
+    # primero los que no salieron en los ultimos dias; si no alcanzan, se completa con los ya publicados
+    frescos = [p for p in candidatos if ref(p) not in recientes]
+    usados = [p for p in candidatos if ref(p) in recientes]
+    random.Random(hoy.toordinal() + 7).shuffle(usados)
+    nuevos = frescos
     resto = [p for p in nuevos if not p.get("destacado")]
     random.Random(hoy.toordinal()).shuffle(resto)      # mezcla distinta cada dia (no 3 baterias seguidas)
     vistos_cat, primero, despues = set(), [], []
@@ -116,11 +129,14 @@ def main():
         (despues if p.get("categoria") in vistos_cat else primero).append(p)
         vistos_cat.add(p.get("categoria"))
     resto = primero + despues
-    orden = [p for p in nuevos if p.get("destacado")][:3] + resto
+    orden = [p for p in nuevos if p.get("destacado")][:3] + resto + usados
 
+    especiales = novedades(hoy, args.salida)
+    ocupadas = {m["hora"] for m in especiales}
+    horas = [h for h in HORARIOS if h not in ocupadas]
     items, fallas = [], []
     for p in orden:
-        if len(items) >= len(HORARIOS):
+        if len(items) >= len(horas):
             break
         archivo = f"flyer_{len(items) + 1}.jpg"
         try:
@@ -134,12 +150,10 @@ def main():
             fallas.append(p)
             print("Flyer con problemas:", p["titulo"], e)
             continue
-        hora = HORARIOS[len(items)]
+        hora = horas[len(items)]
         items.append({"hora": hora, "tipo": "imagen", "archivo": archivo, "texto": texto(p), "ref": ref(p)})
         print(hora, p["titulo"], pesos(p.get("precio_venta") or 0))
 
-    especiales = novedades(hoy, args.salida)
-    ocupadas = {m["hora"] for m in especiales}
     for hora, (nombre, msg) in COMUNIDAD.items():
         if hora not in ocupadas:
             items.append({"hora": hora, "tipo": "texto", "texto": msg, "ref": f"galpon-{nombre}"})
