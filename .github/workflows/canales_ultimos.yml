@@ -1,0 +1,28 @@
+name: Canal - ultimos mensajes de cada canal
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY' > r.txt 2>&1 || true
+          import os, datetime, requests
+          h = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
+          for c in ["120363341886971670@newsletter", "120363413333121795@newsletter", "120363418971945350@newsletter"]:
+              r = requests.get(f"https://gate.whapi.cloud/newsletters/{c}/messages", headers=h, params={"count": 5}, timeout=60)
+              print("==", c, r.status_code)
+              for m in sorted(r.json().get("messages", []), key=lambda m: m.get("timestamp", 0)) if r.ok else []:
+                  t = datetime.datetime.fromtimestamp(m.get("timestamp", 0), datetime.timezone(datetime.timedelta(hours=-3)))
+                  cap = ((m.get("image") or {}).get("caption") or (m.get("text") or {}).get("body") or "").replace("\n", " ")
+                  print(t.strftime("%m-%d %H:%M"), m.get("type"), cap[:60])
+          r = requests.get("https://gate.whapi.cloud/messages/list", headers=h, params={"count": 3}, timeout=60)
+          for m in r.json().get("messages", []):
+              print("ultimo enviado:", m.get("chat_id"), m.get("type"), m.get("timestamp"))
+          PY
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
