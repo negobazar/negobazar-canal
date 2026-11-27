@@ -1,0 +1,23 @@
+name: Canal - listar canales del numero de Negobazar
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  l:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY' > r.txt 2>&1 || true
+          import os, requests
+          h = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"], "Accept": "application/json"}
+          r = requests.get("https://gate.whapi.cloud/newsletters", headers=h, params={"count": 100}, timeout=60)
+          print("HTTP", r.status_code)
+          for c in r.json().get("newsletters", []):
+              print(c.get("id"), "|", c.get("name"), "|", c.get("role"), "|", c.get("subscribers_count"))
+          PY
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
