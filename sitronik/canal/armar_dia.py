@@ -130,7 +130,7 @@ def combos_hudson(cfg):
 def elegir(vendidos, nuevos, orden, dia, tema=None):
     """Intercala según 'orden' y rota cada día para no repetir siempre los mismos."""
     usados, elegidos = set(), []
-    pos = {"vendido": dia * 3, "nuevo": dia * 2, "tema": dia * 4}
+    pos = {"vendido": dia * 3, "nuevo": dia * 2, "tema": 0}
     pools = {"vendido": vendidos, "nuevo": nuevos, "tema": tema or []}
     for tipo in orden:
         pool = pools.get(tipo) or pools["vendido"] or pools["nuevo"]
@@ -164,16 +164,23 @@ def productos_tema(cfg, hoy, dia):
         return []
     listas = []
     for t in activos:
-        vistos, lista = set(), []
+        vistos, por_busqueda = set(), []
         qs = t["busquedas"][:]
         k = dia % len(qs)
         qs = qs[k:] + qs[:k]          # cada dia arranca por otra busqueda
         for q in qs:
+            res = []
             for p in leer_listado(BUSCAR.format(q=requests.utils.quote(q)), 2):
                 if p["id"] not in vistos:
                     vistos.add(p["id"])
                     p["tema"] = t
-                    lista.append(p)
+                    res.append(p)
+            por_busqueda.append(res)
+        # una de cada busqueda por vuelta, asi no salen 3 conservadoras seguidas
+        lista, j = [], 0
+        while any(j < len(r) for r in por_busqueda):
+            lista += [r[j] for r in por_busqueda if j < len(r)]
+            j += 1
         print(f"Tema {t['nombre']}: {len(lista)} productos")
         listas.append(lista)
     mezcla, i = [], 0
