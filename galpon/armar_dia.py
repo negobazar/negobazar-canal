@@ -85,7 +85,7 @@ def leer(params):
 def texto(p):
     pl, pv = p.get("precio_lista") or 0, p.get("precio_venta") or 0
     if pl and pv == pl and "sill" in (p.get("categoria") or "").lower():
-        pv = round(pl * 0.8)        # sillones: 20% OFF sobre lista (la web todavia los muestra sin promo)
+        pv = int(-(-pl * 0.8 // 1000) * 1000)   # sillones: 20% OFF redondeado a mil para arriba (1.499.000 -> 1.200.000)
     if pl and pv and pl > pv:
         precio = (f"🏷️ Precio de lista: ~{pesos(pl)}~\n"
                   f"🔥 *Precio promo: {pesos(pv)}* ({round((1 - pv / pl) * 100)}% OFF)\n")
