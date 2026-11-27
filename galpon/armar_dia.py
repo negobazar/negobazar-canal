@@ -66,6 +66,7 @@ GANCHOS = [
     "🚀 *Los que compran temprano, eligen primero.*\nDespués quedan los colores y modelos que nadie quería 😅\n\n👉 https://pedidos.negobazar.com.ar",
     "💸 Comprar barato *no es suerte, es estar en el lugar correcto*.\nY vos ya estás acá 😎\n\n👉 https://pedidos.negobazar.com.ar",
     "🧾 ¿Para regalar, para tu casa o para revender?\nEn el galpón hay para todo, y a precios que no vas a ver en otro lado 🔥\n\n👉 https://pedidos.negobazar.com.ar",
+    "😉 ¿Viste algo que te gustó en el showroom y *se agotó*?\n\nNo te preocupes: pedile a nuestra cajera o cajero que te tome el pedido y *al día siguiente te lo traemos de nuestro depósito logístico* 🚚📦\n\n📍 White 2075, Parque Avellaneda (CABA)",
     "⚡ *¡Atención!* Seguimos subiendo productos durante el día.\nActivá las notificaciones del canal 🔔 para no perderte nada",
 ]
 
