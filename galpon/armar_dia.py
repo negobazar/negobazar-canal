@@ -51,7 +51,8 @@ COMUNIDAD = {
 
 
 # Mensajes para motivar y generar urgencia, en las pausas entre rafagas (rotan cada dia)
-HORAS_GANCHO = ["09:20", "10:40", "12:00", "13:20", "16:00", "17:20", "18:40"]
+HORAS_GANCHO = ["10:40", "13:20", "17:20"]
+DIAS_SIN_REPETIR_GANCHO = 7      # un mensaje de urgencia no se repite en una semana
 GANCHOS = [
     "⏰ *Lo que ves hoy, mañana puede no estar.*\nEl stock del galpón vuela y no siempre vuelve 🏃‍♂️💨\n\n👉 https://pedidos.negobazar.com.ar",
     "💡 ¿Sabías que en el galpón *no hay mínimo de compra*?\nLlevate 1 o llevate 100, al mismo precio increíble 🙌\n\n👉 https://pedidos.negobazar.com.ar",
@@ -181,10 +182,18 @@ def main():
     items += especiales
     usadas = {m["hora"] for m in items}
     libres = [h for h in HORAS_GANCHO if h not in usadas]
-    k = (hoy.toordinal() * len(HORAS_GANCHO)) % len(GANCHOS)
-    for n, hora in enumerate(libres):
-        items.append({"hora": hora, "tipo": "texto", "texto": GANCHOS[(k + n) % len(GANCHOS)],
-                      "ref": f"galpon-gancho-{hoy.isoformat()}-{n}"})
+    ya_ganchos = set()
+    try:
+        reg = json.load(open(os.environ.get("REGISTRO", ""), encoding="utf-8"))
+        desde = (hoy - datetime.timedelta(days=DIAS_SIN_REPETIR_GANCHO)).isoformat()
+        for fecha, refs in reg.items():
+            if desde <= fecha < hoy.isoformat():
+                ya_ganchos |= {r for r in refs if r.startswith("galpon-gancho-")}
+    except (OSError, ValueError):
+        pass
+    disponibles = [i for i in range(len(GANCHOS)) if f"galpon-gancho-{i}" not in ya_ganchos]
+    for hora, i in zip(libres, disponibles):      # si se acabaron, ese dia no sale ninguno (no se repiten)
+        items.append({"hora": hora, "tipo": "texto", "texto": GANCHOS[i], "ref": f"galpon-gancho-{i}"})
 
     with open(os.path.join(args.salida, "agenda.json"), "w", encoding="utf-8") as f:
         json.dump({"fecha": hoy.isoformat(), "items": items}, f, ensure_ascii=False, indent=1)
