@@ -1,0 +1,222 @@
+name: NEGO3AZAR - canal de WhatsApp del galpon digital
+
+# (Automatico pendiente de aprobacion: por ahora solo a mano) Arma la agenda leyendo pedidos.negobazar.com.ar/difusiones.json
+# (solo flyers) y la publica en el canal NEGO3AZAR en las franjas 07-08:30 / 11-14:30 / 17-20:30.
+# Para probar sin publicar: Run workflow > modo "solo_placas".
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "solo_placas = arma sin publicar · prueba = publica UNA placa ahora · normal = publica el día"
+        default: "solo_placas"
+        type: choice
+        options: [solo_placas, prueba, normal]
+      cantidad:
+        description: "(prueba) cuántas placas publicar"
+        default: "1"
+      cada:
+        description: "(prueba) minutos entre placas"
+        default: "5"
+
+concurrency:
+  group: galpon-canal-${{ inputs.modo || 'normal' }}
+  cancel-in-progress: false
+
+permissions: { contents: write }
+
+jobs:
+  armar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Armar placas y agenda del día
+        env:
+          REGISTRO: registro.json
+        run: python galpon/armar_dia.py --salida galpon_dia
+      - name: Avisar a David los productos sin flyer
+        if: github.event_name == 'schedule'
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, requests
+          t = open("galpon_dia/pendientes.txt", encoding="utf-8").read().strip()
+          if t:
+              r = requests.post("https://gate.whapi.cloud/messages/text", timeout=60,
+                                headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]},
+                                json={"to": "5491168169442@s.whatsapp.net", "body": t})
+              print("Aviso:", r.status_code)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: galpon-dia
+          path: galpon_dia/
+          retention-days: 3
+
+  prueba:
+    needs: armar
+    if: inputs.modo == 'prueba'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: galpon-dia, path: galpon_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Publicar una placa ahora
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: "120363341886971670@newsletter"
+          NOMBRE_CANAL: nego3azar
+          REGISTRO: registro.json
+        run: |
+          python sitronik/canal/registro.py filtrar galpon_dia/agenda.json registro.json
+          python3 sitronik/canal/prueba.py galpon_dia/agenda.json "${{ inputs.cantidad }}" "no"
+          python publicador.py --agenda galpon_dia/agenda.json --desde 00:00 --hasta 23:59 --cada "${{ inputs.cada }}"
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b galpon-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" galpon-registro
+
+  tramo-1:
+    needs: armar
+    if: github.event_name == 'schedule' || inputs.modo == 'normal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: galpon-dia, path: galpon_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Publicar hasta las 08:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: "120363341886971670@newsletter"
+          NOMBRE_CANAL: nego3azar
+          REGISTRO: registro.json
+        run: |
+          python sitronik/canal/registro.py filtrar galpon_dia/agenda.json registro.json
+          python publicador.py --agenda galpon_dia/agenda.json --desde 00:00 --hasta 08:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b galpon-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" galpon-registro
+
+  tramo-2:
+    needs: tramo-1
+    if: always() && needs.tramo-1.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: galpon-dia, path: galpon_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Publicar de 09:00 a 12:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: "120363341886971670@newsletter"
+          NOMBRE_CANAL: nego3azar
+          REGISTRO: registro.json
+        run: |
+          python sitronik/canal/registro.py filtrar galpon_dia/agenda.json registro.json
+          python publicador.py --agenda galpon_dia/agenda.json --desde 09:00 --hasta 12:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b galpon-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" galpon-registro
+
+  tramo-3:
+    needs: tramo-2
+    if: always() && needs.tramo-1.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: galpon-dia, path: galpon_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Publicar de 13:00 a 17:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: "120363341886971670@newsletter"
+          NOMBRE_CANAL: nego3azar
+          REGISTRO: registro.json
+        run: |
+          python sitronik/canal/registro.py filtrar galpon_dia/agenda.json registro.json
+          python publicador.py --agenda galpon_dia/agenda.json --desde 13:00 --hasta 17:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b galpon-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" galpon-registro
+
+  tramo-4:
+    needs: tramo-3
+    if: always() && needs.tramo-1.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: galpon-dia, path: galpon_dia }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - name: Bajar registro de enviados
+        run: git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > registro.json || echo "{}" > registro.json
+      - name: Publicar de 18:00 a 23:59
+        env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_CANAL: "120363341886971670@newsletter"
+          NOMBRE_CANAL: nego3azar
+          REGISTRO: registro.json
+        run: |
+          python sitronik/canal/registro.py filtrar galpon_dia/agenda.json registro.json
+          python publicador.py --agenda galpon_dia/agenda.json --desde 18:00 --hasta 23:59
+      - name: Guardar registro de enviados
+        if: always()
+        run: |
+          git fetch -q origin galpon-registro && git show origin/galpon-registro:registro.json > remoto.json || echo "{}" > remoto.json
+          mkdir -p /tmp/reg && python sitronik/canal/registro.py unir registro.json remoto.json /tmp/reg/registro.json
+          cd /tmp/reg && git init -q && git checkout -q -b galpon-registro && git add . \
+          && git -c user.name=bot -c user.email=bot@x commit -qm registro \
+          && git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" galpon-registro
