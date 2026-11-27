@@ -1,9 +1,11 @@
 name: NEGO3AZAR - canal de WhatsApp del galpon digital
 
-# (Automatico pendiente de aprobacion: por ahora solo a mano) Arma la agenda leyendo pedidos.negobazar.com.ar/difusiones.json
-# (solo flyers) y la publica en el canal NEGO3AZAR en las franjas 07-08:30 / 11-14:30 / 17-20:30.
+# Todos los dias a las 05:30 (Argentina) arma la agenda leyendo pedidos.negobazar.com.ar/difusiones.json
+# (solo flyers) y la publica en el canal NEGO3AZAR de 07:00 a 20:30 (rafagas de 3 productos cada 10 min con 1 h de pausa).
 # Para probar sin publicar: Run workflow > modo "solo_placas".
 on:
+  schedule:
+    - cron: "30 8 * * *"   # 05:30 Argentina (primera publicacion 07:00)
   workflow_dispatch:
     inputs:
       modo:
