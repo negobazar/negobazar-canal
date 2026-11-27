@@ -27,7 +27,7 @@ UA = {"User-Agent": "Mozilla/5.0 (Negobazar galpon canal)"}
 DIAS_SIN_REPETIR = 10
 
 # Franjas: 07:00-08:30 / 11:00-14:30 / 17:00-20:30
-HORARIOS = ["07:15", "08:15", "11:00", "12:00", "13:00", "14:15", "17:00", "18:00", "19:00", "20:15"]
+HORARIOS = ["08:15", "11:00", "12:00", "13:00", "14:00", "17:00", "17:45", "18:30", "19:15", "20:00"]
 COMUNIDAD = {
     "07:00": ("buendia", "☀️ ¡Buen día! Abrió el *galpón digital de Negobazar* 🏭\n\n"
                          "Hoy vamos a ir subiendo ofertas durante el día.\n"
