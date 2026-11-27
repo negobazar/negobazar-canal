@@ -1,0 +1,24 @@
+name: NEGO3AZAR - envio inmediato (texto y a los 3 min imagen)
+on: workflow_dispatch
+permissions: { contents: read }
+jobs:
+  e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install requests
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time, base64, requests
+          C = "120363341886971670@newsletter"
+          h = {"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]}
+          e = json.load(open("galpon/envio_ya.json", encoding="utf-8"))
+          r = requests.post("https://gate.whapi.cloud/messages/text", headers=h, timeout=60, json={"to": C, "body": e["texto"]})
+          print("texto", r.status_code, r.text[:150])
+          time.sleep(180)
+          img = "data:image/jpeg;base64," + base64.b64encode(open(e["imagen"], "rb").read()).decode()
+          r = requests.post("https://gate.whapi.cloud/messages/image", headers=h, timeout=90, json={"to": C, "media": img, "caption": e["caption"]})
+          print("imagen", r.status_code, r.text[:150])
+          PY
