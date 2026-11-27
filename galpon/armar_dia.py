@@ -93,7 +93,7 @@ def texto(p):
         precio = f"🔥 *{pesos(pv or pl)}*\n"
     return (f"🏭 *{p['titulo']}*\n\n{precio}"
             f"✅ Sin mínimo de compra\n\n"
-            f"🛒 Pedilo acá 👉 {p['url']}")
+            f"🛒 Pedilo acá 👉 {p.get('url_corta') or p['url']}")
 
 
 def novedades(hoy, salida):
