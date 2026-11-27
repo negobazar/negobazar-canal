@@ -1,0 +1,26 @@
+name: NEGO3AZAR - mandar muestra a David
+# Manda a David (no al canal) un producto real tal cual saldria en el canal.
+on: workflow_dispatch
+permissions: { contents: read }
+jobs:
+  m:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests
+      - run: python galpon/armar_dia.py --salida galpon_dia
+      - env:
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, base64, requests
+          a = json.load(open("galpon_dia/agenda.json", encoding="utf-8"))
+          it = next(i for i in sorted(a["items"], key=lambda i: i["hora"]) if i["tipo"] == "imagen" and i["ref"].startswith("galpon-") and "nov" not in i["ref"])
+          img = "data:image/jpeg;base64," + base64.b64encode(open("galpon_dia/" + it["archivo"], "rb").read()).decode()
+          r = requests.post("https://gate.whapi.cloud/messages/image", timeout=90,
+                            headers={"Authorization": "Bearer " + os.environ["WHAPI_TOKEN"]},
+                            json={"to": "5491168169442@s.whatsapp.net", "media": img, "caption": it["texto"]})
+          print(r.status_code, r.text[:200])
+          PY
