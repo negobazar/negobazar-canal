@@ -1,0 +1,11 @@
+name: Canal - link de invitacion de NEGO3AZAR
+on: workflow_dispatch
+permissions: { contents: write }
+jobs:
+  l:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.WHAPI_TOKEN }}" "https://gate.whapi.cloud/newsletters/120363341886971670@newsletter" | python3 -c "import json,sys;d=json.load(sys.stdin);print({k:d.get(k) for k in ('name','invite_code','invite_link','subscribers_count','link')})" > r.txt
+          mkdir o && cp r.txt o/ && cd o && git init -q && git config user.name b && git config user.email b@x && git add . && git commit -qm r
+          git push -fq https://x-access-token:${{ github.token }}@github.com/${{ github.repository }} HEAD:diag-res
